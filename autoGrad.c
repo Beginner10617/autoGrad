@@ -14,8 +14,6 @@ Value *EmptyValue() {
   out->_forward = doNothing;
   out->_prev[0] = NULL;
   out->_prev[1] = NULL;
-  out->nextSize = 0;
-  out->nextCapacity = 1;
   return out;
 }
 
@@ -31,8 +29,6 @@ Value *floatToValue(float x) {
   out->_forward = doNothing;
   out->_prev[0] = NULL;
   out->_prev[1] = NULL;
-  out->nextSize = 0;
-  out->nextCapacity = 1;
   return out;
 }
 
@@ -48,8 +44,6 @@ Value *doubleToValue(double x) {
   out->_forward = doNothing;
   out->_prev[0] = NULL;
   out->_prev[1] = NULL;
-  out->nextSize = 0;
-  out->nextCapacity = 1;
   return out;
 }
 

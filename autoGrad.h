@@ -10,7 +10,6 @@ struct Value {
   double data, grad;
   Funcptr _backward, _forward;
   struct Value *_prev[2];
-  int nextSize, nextCapacity;
 };
 
 // Constructors
