@@ -10,6 +10,7 @@ struct Value {
   double data, grad;
   Funcptr _backward, _forward;
   struct Value *_prev[2], **_next;
+  int nextSize, nextCapacity;
 };
 
 // Constructors
@@ -34,4 +35,7 @@ void _mulBack(Value *x);
 
 // null function
 void doNothing(Value *x);
+
+// Destructors
+void Destroy(Value **x);
 #endif
