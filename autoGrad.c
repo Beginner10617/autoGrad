@@ -63,8 +63,8 @@ void addNextValue(Value *x, Value *out) {
     exit(EXIT_FAILURE);
   }
   x->nextSize += 1;
-  if (x->nextSize > x->nextCapacity) {
-    while (x->nextSize > x->nextCapacity) {
+  if (x->nextSize >= x->nextCapacity) {
+    while (x->nextSize >= x->nextCapacity) {
       x->nextCapacity *= 2;
     }
     x->_next = realloc(x->_next, sizeof(Value *) * x->nextCapacity);
