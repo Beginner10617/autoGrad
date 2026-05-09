@@ -153,3 +153,57 @@ void _mulFwd(Value *x) {
 }
 
 // _backward
+void _addBack(Value *x) {
+  if (x == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  if (x->_prev[0] == NULL || x->_prev[1] == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  x->_prev[0]->grad += x->grad;
+  x->_prev[1]->grad += x->grad;
+}
+
+void _subBack(Value *x) {
+  if (x == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  if (x->_prev[0] == NULL || x->_prev[1] == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  x->_prev[0]->grad += x->grad;
+  x->_prev[1]->grad -= x->grad;
+}
+
+void _mulBack(Value *z) {
+  if (z == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  Value *x = z->_prev[0];
+  Value *y = z->_prev[1];
+  if (x == NULL || y == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  x->grad += y->data * z->grad;
+  y->grad += x->data * z->grad;
+}
+
+// null function
+void doNothing(Value *x) { return; }
+
+void Destroy(Value **x) {
+  if (x == NULL)
+    return;
+  if (*x == NULL) {
+    x = NULL;
+    return;
+  }
+  free(*x);
+  x = NULL;
+}
