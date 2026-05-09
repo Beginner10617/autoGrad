@@ -42,6 +42,7 @@ int main() {
   X->_backward(X);
 
   // Printing Values
+  printf("Value X:\n");
   printValue(X);
   printf("\nValue Y:\n");
   printValue(Y);
