@@ -2,7 +2,7 @@
 #include "stdio.h"
 #include <stdlib.h>
 // Constructors
-Value *EmptyValue() {
+Value *EmptyValue(bool modify) {
   Value *out = malloc(sizeof(Value));
   if (out == NULL) {
     printf("Error allocating space for value\n");
@@ -14,10 +14,11 @@ Value *EmptyValue() {
   out->_forward = doNothing;
   out->_prev[0] = NULL;
   out->_prev[1] = NULL;
+  out->_modifiable = modify;
   return out;
 }
 
-Value *floatToValue(float x) {
+Value *floatToValue(float x, bool modify) {
   Value *out = malloc(sizeof(Value));
   if (out == NULL) {
     printf("Error allocating space for value\n");
@@ -29,10 +30,11 @@ Value *floatToValue(float x) {
   out->_forward = doNothing;
   out->_prev[0] = NULL;
   out->_prev[1] = NULL;
+  out->_modifiable = modify;
   return out;
 }
 
-Value *doubleToValue(double x) {
+Value *doubleToValue(double x, bool modify) {
   Value *out = malloc(sizeof(Value));
   if (out == NULL) {
     printf("Error allocating space for value\n");
@@ -44,6 +46,7 @@ Value *doubleToValue(double x) {
   out->_forward = doNothing;
   out->_prev[0] = NULL;
   out->_prev[1] = NULL;
+  out->_modifiable = modify;
   return out;
 }
 

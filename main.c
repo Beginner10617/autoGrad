@@ -1,5 +1,6 @@
 #include "autoGrad.h"
 #include "stdio.h"
+#include <stdbool.h>
 
 void printValue(Value *x) {
   if (x == NULL) {
@@ -10,12 +11,12 @@ void printValue(Value *x) {
   printf("grad: %f\n", x->grad);
 }
 int main() {
-  Value *X = doubleToValue(0.9);
-  Value *Y = doubleToValue(-0.2);
-  Value *Z = doubleToValue(1.1);
-  Value *A = EmptyValue();
-  Value *B = EmptyValue();
-  Value *C = EmptyValue();
+  Value *X = doubleToValue(0.9, true);
+  Value *Y = doubleToValue(-0.2, true);
+  Value *Z = doubleToValue(1.1, true);
+  Value *A = EmptyValue(false);
+  Value *B = EmptyValue(false);
+  Value *C = EmptyValue(false);
 
   // A = X * Y
   setMul(A, X, Y);

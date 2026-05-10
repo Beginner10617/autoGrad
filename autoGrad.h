@@ -2,7 +2,6 @@
 #define AUTOGRAD
 #include "stdbool.h"
 #include "stdlib.h"
-typedef enum { ADD, SUB, MUL } operation;
 typedef struct Value Value;
 typedef void (*Funcptr)(Value *);
 
@@ -10,12 +9,13 @@ struct Value {
   double data, grad;
   Funcptr _backward, _forward;
   struct Value *_prev[2];
+  bool _modifiable;
 };
 
 // Constructors
-Value *EmptyValue();
-Value *floatToValue(float x);
-Value *doubleToValue(double x);
+Value *EmptyValue(bool modify);
+Value *floatToValue(float x, bool modify);
+Value *doubleToValue(double x, bool modify);
 
 // set out = x <op> y
 void setAdd(Value *out, Value *x, Value *y);
