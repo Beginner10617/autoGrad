@@ -8,7 +8,7 @@ Currently supported operations:
 - Addition (+)
 - Subtraction (-)
 - Multiplication (*)
-
+- Sum (Σ)
 ---
 ## Build
 Compile with:
@@ -69,7 +69,7 @@ Each operation accumulates gradients into its parent nodes.
 Each `Value` node contains:
 - scalar `data`
 - gradient (`grad`)
-- pointers to previous nodes (`_prev[2]`)
+- pointers to previous nodes (`_prev`)
 - forward function pointer (`_forward`)
 - backward function pointer (`_backward`)
 
@@ -77,7 +77,7 @@ The graph is manually constructed using helper functions like `setAdd(out, x, y)
 
 ---
 ## Possible Improvements
-- More operations : Division, exponential functions, activation functions like `tanh`, `ReLU`, etc.
+- More operations : exponential functions, activation functions like `tanh`, `ReLU`, etc.
 - Automatic topological sorting
 - Implementing neural network layers
 
