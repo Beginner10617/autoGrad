@@ -1,5 +1,6 @@
 #include "autoGrad.h"
 #include "stdio.h"
+#include "utils.h"
 #include <stdbool.h>
 
 void printValue(Value *x) {
@@ -30,19 +31,18 @@ int main() {
   addToSum(Z, Y2);
   addToSum(Z, Y3);
 
-  // _forward
-  Y1->_forward(Y1);
-  Y2->_forward(Y2);
-  Y3->_forward(Y3);
-  Z->_forward(Z);
-
-  // _backward
-  Z->grad = 1.0f;
-  Z->_backward(Z);
-  Y3->_backward(Y3);
-  Y2->_backward(Y2);
-  Y1->_backward(Y1);
-
+  ValueList *list = CreateValueList();
+  topoSortList(Z, list);
+  int x = 1;
+  while (x) {
+    forward(list);
+    Z->grad = 1.0f;
+    backward(list);
+    printf("%f\n", Z->data);
+    printf("press 0 to exit: ");
+    scanf("%d", &x);
+    gradientDescent(list, 0.01);
+  }
   printValue(X1);
   printValue(X2);
   printf("\n");

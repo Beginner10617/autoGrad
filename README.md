@@ -4,6 +4,8 @@ A tiny automatic differentiation engine written in C.
 This project implements a computational graph with reusable nodes for performing:
 - Forward propagation
 - Reverse-mode automatic differentiation (backpropagation)
+- Topological sorting given a final node
+- Gradient descent with given learning rate, and topological sorted list
 Currently supported operations:
 - Addition (+)
 - Subtraction (-)
@@ -49,6 +51,11 @@ Calling `node->_forward(node);` computes the node's value using its dependencies
 
 Forward execution order should follow a topological ordering of the graph.
 
+To achieve this, a `ValueList` will be computed using `topoSortList()` once the graph is constructed.
+
+The list can then be used in a learning loop calling `forward()`, `backward()` and `gradientDescent()`
+in that order. Unlike the previous implementation, no new memory will be allocated in these calls.
+
 ---
 ## Backward Pass
 Gradients are propagated using reverse-mode autodiff.
@@ -78,8 +85,8 @@ The graph is manually constructed using helper functions like `setAdd(out, x, y)
 ---
 ## Possible Improvements
 - More operations : exponential functions, activation functions like `tanh`, `ReLU`, etc.
-- Automatic topological sorting
 - Implementing neural network layers
+- Testing neural network over MNIST dataset
 
 ---
 ## Inspiration

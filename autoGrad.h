@@ -22,6 +22,7 @@ Value *doubleToValue(double x, bool modify);
 void setAdd(Value *out, Value *x, Value *y);
 void setSub(Value *out, Value *x, Value *y);
 void setMul(Value *out, Value *x, Value *y);
+// to be used together:
 void setSum(Value *out, size_t size);
 void addToSum(Value *out, Value *x);
 
