@@ -8,7 +8,8 @@ typedef void (*Funcptr)(Value *);
 struct Value {
   double data, grad;
   Funcptr _backward, _forward;
-  struct Value *_prev[2];
+  struct Value **_prev;
+  int _prevsz, _prevcap;
   bool _modifiable;
 };
 

@@ -12,8 +12,9 @@ Value *EmptyValue(bool modify) {
   out->grad = 0;
   out->_backward = doNothing;
   out->_forward = doNothing;
-  out->_prev[0] = NULL;
-  out->_prev[1] = NULL;
+  out->_prev = NULL;
+  out->_prevsz = 0;
+  out->_prevcap = 0;
   out->_modifiable = modify;
   return out;
 }
@@ -28,8 +29,9 @@ Value *floatToValue(float x, bool modify) {
   out->grad = 0;
   out->_backward = doNothing;
   out->_forward = doNothing;
-  out->_prev[0] = NULL;
-  out->_prev[1] = NULL;
+  out->_prev = NULL;
+  out->_prevsz = 0;
+  out->_prevcap = 0;
   out->_modifiable = modify;
   return out;
 }
@@ -44,8 +46,9 @@ Value *doubleToValue(double x, bool modify) {
   out->grad = 0;
   out->_backward = doNothing;
   out->_forward = doNothing;
-  out->_prev[0] = NULL;
-  out->_prev[1] = NULL;
+  out->_prev = NULL;
+  out->_prevsz = 0;
+  out->_prevcap = 0;
   out->_modifiable = modify;
   return out;
 }
@@ -58,6 +61,9 @@ void setAdd(Value *out, Value *x, Value *y) {
   }
   out->_forward = _addFwd;
   out->_backward = _addBack;
+  out->_prevsz = 2;
+  out->_prevcap = 2;
+  out->_prev = malloc(sizeof(Value *) * 2);
   out->_prev[0] = x;
   out->_prev[1] = y;
 }
@@ -69,6 +75,10 @@ void setSub(Value *out, Value *x, Value *y) {
   }
   out->_forward = _subFwd;
   out->_backward = _subBack;
+  out->_prevsz = 2;
+  out->_prevcap = 2;
+  out->_prev = malloc(sizeof(Value *) * 2);
+
   out->_prev[0] = x;
   out->_prev[1] = y;
 }
@@ -80,6 +90,10 @@ void setMul(Value *out, Value *x, Value *y) {
   }
   out->_forward = _mulFwd;
   out->_backward = _mulBack;
+  out->_prevsz = 2;
+  out->_prevcap = 2;
+  out->_prev = malloc(sizeof(Value *) * 2);
+
   out->_prev[0] = x;
   out->_prev[1] = y;
 }
