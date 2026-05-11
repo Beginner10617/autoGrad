@@ -11,49 +11,67 @@ void printValue(Value *x) {
   printf("grad: %f\n", x->grad);
 }
 int main() {
-  Value *X = doubleToValue(0.9, true);
-  Value *Y = doubleToValue(-0.2, true);
-  Value *Z = doubleToValue(1.1, true);
-  Value *A = EmptyValue(false);
-  Value *B = EmptyValue(false);
-  Value *C = EmptyValue(false);
+  Value *X1 = doubleToValue(0.9, true);
+  Value *X2 = doubleToValue(-0.2, true);
+  Value *X3 = doubleToValue(1.1, true);
+  Value *X4 = doubleToValue(0.8f, true);
+  Value *X5 = doubleToValue(0.2, true);
+  Value *X6 = doubleToValue(1.2, true);
+  Value *X7 = doubleToValue(-0.6, true);
+  Value *X8 = doubleToValue(0.7, true);
+  Value *X9 = doubleToValue(-0.9, true);
+  Value *Y1 = EmptyValue(false);
+  Value *Y2 = EmptyValue(false);
+  Value *Y3 = EmptyValue(false);
+  Value *Z = EmptyValue(false);
 
-  // A = X * Y
-  setMul(A, X, Y);
-  // B = Z * Z
-  setMul(B, Z, Z);
-  // C = A + B
-  setAdd(C, A, B);
+  setSum(Y1, 3);
+  addToSum(Y1, X1);
+  addToSum(Y1, X2);
+  addToSum(Y1, X3);
+  setSum(Y2, 3);
+  addToSum(Y2, X4);
+  addToSum(Y2, X5);
+  addToSum(Y2, X6);
+  setSum(Y3, 3);
+  addToSum(Y3, X7);
+  addToSum(Y3, X8);
+  addToSum(Y3, X9);
+  setSum(Z, 3);
+  addToSum(Z, Y1);
+  addToSum(Z, Y2);
+  addToSum(Z, Y3);
 
-  // Forward pass
-  X->_forward(X);
-  Y->_forward(Y);
+  // _forward
+  Y1->_forward(Y1);
+  Y2->_forward(Y2);
+  Y3->_forward(Y3);
   Z->_forward(Z);
-  A->_forward(A);
-  B->_forward(B);
-  C->_forward(C);
 
-  // Backward pass
-  C->grad = 1;
-  C->_backward(C);
-  B->_backward(B);
-  A->_backward(A);
+  // _backward
+  Z->grad = 1.0f;
   Z->_backward(Z);
-  Y->_backward(Y);
-  X->_backward(X);
+  Y3->_backward(Y3);
+  Y2->_backward(Y2);
+  Y1->_backward(Y1);
 
-  // Printing Values
-  printf("Value X:\n");
-  printValue(X);
-  printf("\nValue Y:\n");
-  printValue(Y);
-  printf("\nValue Z:\n");
+  printValue(X1);
+  printValue(X2);
+  printValue(X3);
+  printf("\n");
+  printValue(X4);
+  printValue(X5);
+  printValue(X6);
+  printf("\n");
+  printValue(X7);
+  printValue(X8);
+  printValue(X9);
+  printf("\n");
+  printValue(Y1);
+  printValue(Y2);
+  printValue(Y3);
+  printf("\n");
   printValue(Z);
-  printf("\nValue A:\n");
-  printValue(A);
-  printf("\nValue B:\n");
-  printValue(B);
-  printf("\nValue C:\n");
-  printValue(C);
+
   return 0;
 }

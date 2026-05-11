@@ -9,7 +9,7 @@ struct Value {
   double data, grad;
   Funcptr _backward, _forward;
   struct Value **_prev;
-  int _prevsz, _prevcap;
+  size_t _prevsz, _prevcap;
   bool _modifiable;
 };
 
@@ -22,16 +22,20 @@ Value *doubleToValue(double x, bool modify);
 void setAdd(Value *out, Value *x, Value *y);
 void setSub(Value *out, Value *x, Value *y);
 void setMul(Value *out, Value *x, Value *y);
+void setSum(Value *out, size_t size);
+void addToSum(Value *out, Value *x);
 
 // _forward
 void _addFwd(Value *x);
 void _subFwd(Value *x);
 void _mulFwd(Value *x);
+void _sumFwd(Value *x);
 
 // _backward
 void _addBack(Value *x);
 void _subBack(Value *x);
 void _mulBack(Value *x);
+void _sumBack(Value *x);
 
 // null function
 void doNothing(Value *x);

@@ -97,6 +97,25 @@ void setMul(Value *out, Value *x, Value *y) {
   out->_prev[0] = x;
   out->_prev[1] = y;
 }
+void setSum(Value *out, size_t size) {
+  if (out == NULL || size == 0) {
+    printf("NULL passed to setAdd\n");
+    exit(EXIT_FAILURE);
+  }
+  out->_forward = _sumFwd;
+  out->_backward = _sumBack;
+  out->_prevsz = 0;
+  out->_prevcap = size;
+  out->_prev = malloc(sizeof(Value *) * out->_prevcap);
+}
+void addToSum(Value *out, Value *x) {
+  if (out->_prevsz >= out->_prevcap) {
+    printf("Parameters to sum overflowed\n");
+    exit(EXIT_FAILURE);
+  }
+  out->_prev[out->_prevsz] = x;
+  out->_prevsz++;
+}
 
 // _forward : evaluate out = x <op> y
 void _addFwd(Value *x) {
@@ -133,6 +152,20 @@ void _mulFwd(Value *x) {
     exit(EXIT_FAILURE);
   }
   x->data = x->_prev[0]->data * x->_prev[1]->data;
+}
+void _sumFwd(Value *x) {
+  if (x == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  x->data = 0;
+  for (size_t i = 0; i < x->_prevcap; i++) {
+    if (x->_prev[i] == NULL) {
+      printf("Argument of sum not set, NULL encountered\n");
+      exit(EXIT_FAILURE);
+    }
+    x->data += x->_prev[i]->data;
+  }
 }
 
 // _backward
@@ -175,6 +208,19 @@ void _mulBack(Value *z) {
   }
   x->grad += y->data * z->grad;
   y->grad += x->data * z->grad;
+}
+void _sumBack(Value *x) {
+  if (x == NULL) {
+    printf("NULL passed to _addFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  for (size_t i = 0; i < x->_prevcap; i++) {
+    if (x->_prev[i] == NULL) {
+      printf("Argument of sum not set, NULL encountered\n");
+      exit(EXIT_FAILURE);
+    }
+    x->_prev[i]->grad += x->grad;
+  }
 }
 
 // null function
