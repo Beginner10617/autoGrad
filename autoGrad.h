@@ -22,6 +22,7 @@ Value *doubleToValue(double x, bool modify);
 void setAdd(Value *out, Value *x, Value *y);
 void setSub(Value *out, Value *x, Value *y);
 void setMul(Value *out, Value *x, Value *y);
+void setTanh(Value *out, Value *in);
 // to be used together:
 void setSum(Value *out, size_t size);
 void addToSum(Value *out, Value *x);
@@ -31,12 +32,14 @@ void _addFwd(Value *x);
 void _subFwd(Value *x);
 void _mulFwd(Value *x);
 void _sumFwd(Value *x);
+void _tanhFwd(Value *x);
 
 // _backward
 void _addBack(Value *x);
 void _subBack(Value *x);
 void _mulBack(Value *x);
 void _sumBack(Value *x);
+void _tanhBack(Value *x);
 
 // null function
 void doNothing(Value *x);
