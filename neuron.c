@@ -59,3 +59,32 @@ void printNeuron(Neuron *neuron) {
 }
 
 // LAYER
+Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act) {
+  Layer *out = malloc(sizeof(Layer));
+  if (out == NULL) {
+    printf("Unable to allocate memory for layer\n");
+    exit(EXIT_FAILURE);
+  }
+  out->num_of_neurons = num_of_outputs;
+  out->size_of_neurons = num_of_inputs;
+  out->neurons = malloc(sizeof(Neuron *) * num_of_outputs);
+  for (size_t i = 0; i < num_of_outputs; i++) {
+    out->neurons[i] = createNeuron(num_of_inputs, act);
+  }
+  return out;
+}
+
+Value **setLayer(Layer *layer, Value **inputs) {
+  Value **out = malloc(sizeof(Value *) * layer->num_of_neurons);
+  for (size_t i = 0; i < layer->num_of_neurons; i++) {
+    out[i] = setNeuron(layer->neurons[i], inputs);
+  }
+  return out;
+}
+
+void printLayer(Layer *layer) {
+  printf("Number of neurons: %zu\nSize of each neuron: %zu\n",
+         layer->num_of_neurons, layer->size_of_neurons);
+  for (size_t i = 0; i < layer->num_of_neurons; i++)
+    printNeuron(layer->neurons[i]);
+}

@@ -21,8 +21,9 @@ void printNeuron(Neuron *neuron);
 struct Layer {
   size_t num_of_neurons, size_of_neurons;
   Neuron **neurons;
+  actFunc activation;
 };
-Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs);
+Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act);
 Value **setLayer(Layer *layer, Value **inputs);
 void printLayer(Layer *layer);
 
