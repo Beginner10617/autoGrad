@@ -30,10 +30,10 @@ void printLayer(Layer *layer);
 struct MLP {
   size_t *num_of_outputs;
   size_t num_of_inputs, num_of_layers;
-  Layer *layers;
+  Layer **layers;
 };
 MLP *createMLP(size_t num_of_layers, size_t num_of_inputs,
-               size_t *num_of_outputs);
-Value *setMLP(MLP *mlp, Value **inputs);
+               size_t *num_of_outputs, actFunc *acts);
+Value **setMLP(MLP *mlp, Value **inputs);
 void printMLP(MLP *mlp);
 #endif

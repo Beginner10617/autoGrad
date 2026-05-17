@@ -1,6 +1,7 @@
 #include "neuron.h"
 #include "autoGrad.h"
 #include "stdio.h"
+#include <stddef.h>
 #include <stdlib.h>
 // NEURON
 Neuron *createNeuron(size_t sz, actFunc act) {
@@ -68,6 +69,10 @@ Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act) {
   out->num_of_neurons = num_of_outputs;
   out->size_of_neurons = num_of_inputs;
   out->neurons = malloc(sizeof(Neuron *) * num_of_outputs);
+  if (out->neurons == NULL) {
+    printf("UNable to allocate space for neurons in Layer\n");
+    exit(EXIT_FAILURE);
+  }
   for (size_t i = 0; i < num_of_outputs; i++) {
     out->neurons[i] = createNeuron(num_of_inputs, act);
   }
@@ -87,4 +92,51 @@ void printLayer(Layer *layer) {
          layer->num_of_neurons, layer->size_of_neurons);
   for (size_t i = 0; i < layer->num_of_neurons; i++)
     printNeuron(layer->neurons[i]);
+}
+
+// MLP
+MLP *createMLP(size_t num_of_layers, size_t num_of_inputs,
+               size_t *num_of_outputs, actFunc *acts) {
+  MLP *out = malloc(sizeof(MLP));
+  if (out == NULL) {
+    printf("Unable to allocate space for MLP\n");
+    exit(EXIT_FAILURE);
+  }
+  out->num_of_inputs = num_of_inputs;
+  out->num_of_layers = num_of_layers;
+  out->num_of_outputs = num_of_outputs;
+  out->layers = malloc(sizeof(Layer *) * num_of_layers);
+  if (out->layers == NULL) {
+    printf("Unable to allocate space for layers in MLP\n");
+    exit(EXIT_FAILURE);
+  }
+  out->layers[0] = createLayer(num_of_inputs, num_of_outputs[0], acts[0]);
+  for (size_t i = 1; i < num_of_layers; i++) {
+    out->layers[i] =
+        createLayer(num_of_outputs[i - 1], num_of_outputs[i], acts[i]);
+  }
+  return out;
+}
+
+Value **setMLP(MLP *mlp, Value **inputs) {
+  Value **curr_input = inputs;
+  for (size_t i = 0; i < mlp->num_of_layers; i++) {
+    curr_input = setLayer(mlp->layers[i], curr_input);
+  }
+  return curr_input;
+}
+
+void printMLP(MLP *mlp) {
+  printf("Number of inputs: %zu\nNumber of layers: %zu\n", mlp->num_of_inputs,
+         mlp->num_of_layers);
+  printf("Outputs: ");
+  for (size_t i = 0; i < mlp->num_of_layers; i++) {
+    printf("%zu", mlp->num_of_outputs[i]);
+    if (i < mlp->num_of_layers - 1)
+      printf(", ");
+    else
+      printf("\n");
+  }
+  for (size_t i = 0; i < mlp->num_of_layers; i++)
+    printLayer(mlp->layers[i]);
 }
