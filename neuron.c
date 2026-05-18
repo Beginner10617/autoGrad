@@ -36,9 +36,11 @@ Value *setNeuron(Neuron *neuron, Value **inputs) {
     setMul(intermediate[i], neuron->weights[i], inputs[i]);
   }
   Value *output = EmptyValue(false);
+  Value *tmp = EmptyValue(false);
   setSum(output, size);
   for (size_t i = 0; i < size; i++)
-    addToSum(output, intermediate[i]);
+    addToSum(tmp, intermediate[i]);
+  setTanh(output, tmp);
   return output;
 }
 // helper function
