@@ -1,5 +1,7 @@
 #include "autoGrad.h"
+#include "math.h"
 #include "stdio.h"
+#include "stdlib.h"
 #include <stdlib.h>
 // Constructors
 Value *EmptyValue(bool modify) {
@@ -97,6 +99,18 @@ void setMul(Value *out, Value *x, Value *y) {
   out->_prev[0] = x;
   out->_prev[1] = y;
 }
+void setTanh(Value *out, Value *in) {
+  if (out == NULL || in == NULL) {
+    printf("NULL passed to setTanh\n");
+    exit(EXIT_FAILURE);
+  }
+  out->_backward = _tanhBack;
+  out->_forward = _tanhFwd;
+  out->_prevsz = 1;
+  out->_prevcap = 1;
+  out->_prev = malloc(sizeof(Value *));
+  out->_prev[0] = in;
+}
 void setSum(Value *out, size_t size) {
   if (out == NULL || size == 0) {
     printf("NULL passed to setAdd\n");
@@ -167,6 +181,17 @@ void _sumFwd(Value *x) {
     x->data += x->_prev[i]->data;
   }
 }
+void _tanhFwd(Value *x) {
+  if (x == NULL) {
+    printf("NULL passed to _tanhFwd\n");
+    exit(EXIT_FAILURE);
+  }
+  if (x->_prev == NULL) {
+    printf("Argument of tanh not set\n");
+    exit(EXIT_FAILURE);
+  }
+  x->data = tanh(x->_prev[0]->data);
+}
 
 // _backward
 void _addBack(Value *x) {
@@ -221,6 +246,18 @@ void _sumBack(Value *x) {
     }
     x->_prev[i]->grad += x->grad;
   }
+}
+void _tanhBack(Value *x) {
+  if (x == NULL) {
+    printf("NULL passed to _tanhBack\n");
+    exit(EXIT_FAILURE);
+  }
+  Value *y = x->_prev[0];
+  if (x == NULL || y == NULL) {
+    printf("NULL passed to _tanhBack\n");
+    exit(EXIT_FAILURE);
+  }
+  y->grad += x->grad / (cosh(y->data) * cosh(y->data));
 }
 
 // null function
