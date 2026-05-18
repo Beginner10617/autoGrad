@@ -44,6 +44,9 @@ void _tanhBack(Value *x);
 // null function
 void doNothing(Value *x);
 
+// print
+void printValue(Value *x);
+
 // Destructors
 void Destroy(Value **x);
 #endif
