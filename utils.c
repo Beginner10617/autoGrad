@@ -3,9 +3,23 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#define ERROR "\x1b[31m"
+#define RESET "\x1b[0m"
 ValueList *CreateValueList() {
   ValueList *out = malloc(sizeof(ValueList));
+  if(out == NULL){
+    printf(ERROR
+    "E44: Unable to create ValueList\n"
+    RESET);
+    exit(EXIT_FAILURE);
+  }
   out->values = malloc(sizeof(Value *));
+  if(out->values == NULL){
+    printf(ERROR
+    "E45: Unable to allocate space for elements of ValueList\n"
+    RESET);
+    exit(EXIT_FAILURE);
+  }
   out->size = 0;
   out->_cap = 1;
   return out;

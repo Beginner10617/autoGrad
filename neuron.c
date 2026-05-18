@@ -3,11 +3,15 @@
 #include "stdio.h"
 #include <stddef.h>
 #include <stdlib.h>
+#define ERROR "\x1b[31m"
+#define RESET "\x1b[0m"
 // NEURON
 Neuron *createNeuron(size_t sz, actFunc act) {
   Neuron *neuron = malloc(sizeof(Neuron));
   if (neuron == NULL) {
-    printf("Unable to create neuron\n");
+    printf(ERROR
+    "E36: Unable to create neuron\n"
+    RESET);
     exit(EXIT_FAILURE);
   }
   neuron->size = sz;
@@ -15,7 +19,9 @@ Neuron *createNeuron(size_t sz, actFunc act) {
   neuron->bias = doubleToValue((double)rand() / (double)RAND_MAX, true);
   neuron->weights = malloc(sizeof(Value *) * sz);
   if (neuron->weights == NULL) {
-    printf("Unable to allocate space for weights\n");
+    printf(ERROR
+    "E37: Unable to allocate space for weights\n"
+    RESET);
     exit(EXIT_FAILURE);
   }
   for (size_t i = 0; i < sz; i++) {
@@ -27,7 +33,9 @@ Value *setNeuron(Neuron *neuron, Value **inputs) {
   size_t size = neuron->size + 1;
   Value **intermediate = malloc(sizeof(Value *) * size);
   if (intermediate == NULL) {
-    printf("Unable to allocate space for intermediate\n");
+    printf(ERROR
+    "E38: Unable to allocate space for intermediate\n"
+    RESET);
     exit(EXIT_FAILURE);
   }
   intermediate[size - 1] = neuron->bias;
@@ -65,14 +73,18 @@ void printNeuron(Neuron *neuron) {
 Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act) {
   Layer *out = malloc(sizeof(Layer));
   if (out == NULL) {
-    printf("Unable to allocate memory for layer\n");
+    printf(ERROR
+    "E39: Unable to allocate memory for layer\n"
+    RESET);
     exit(EXIT_FAILURE);
   }
   out->num_of_neurons = num_of_outputs;
   out->size_of_neurons = num_of_inputs;
   out->neurons = malloc(sizeof(Neuron *) * num_of_outputs);
   if (out->neurons == NULL) {
-    printf("UNable to allocate space for neurons in Layer\n");
+    printf(ERROR
+    "E40: Unable to allocate space for neurons in Layer\n"
+    RESET);
     exit(EXIT_FAILURE);
   }
   for (size_t i = 0; i < num_of_outputs; i++) {
@@ -83,6 +95,12 @@ Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act) {
 
 Value **setLayer(Layer *layer, Value **inputs) {
   Value **out = malloc(sizeof(Value *) * layer->num_of_neurons);
+  if(out == NULL){
+    printf(ERROR
+    "E41: Unable to create output for layer\n"
+    RESET);
+    exit(EXIT_FAILURE);
+  }
   for (size_t i = 0; i < layer->num_of_neurons; i++) {
     out[i] = setNeuron(layer->neurons[i], inputs);
   }
@@ -101,7 +119,9 @@ MLP *createMLP(size_t num_of_layers, size_t num_of_inputs,
                size_t *num_of_outputs, actFunc *acts) {
   MLP *out = malloc(sizeof(MLP));
   if (out == NULL) {
-    printf("Unable to allocate space for MLP\n");
+    printf(ERROR
+    "E42: Unable to allocate space for MLP\n"
+    RESET);
     exit(EXIT_FAILURE);
   }
   out->num_of_inputs = num_of_inputs;
@@ -109,7 +129,9 @@ MLP *createMLP(size_t num_of_layers, size_t num_of_inputs,
   out->num_of_outputs = num_of_outputs;
   out->layers = malloc(sizeof(Layer *) * num_of_layers);
   if (out->layers == NULL) {
-    printf("Unable to allocate space for layers in MLP\n");
+    printf(ERROR
+    "E43: Unable to allocate space for layers in MLP\n"
+    RESET);
     exit(EXIT_FAILURE);
   }
   out->layers[0] = createLayer(num_of_inputs, num_of_outputs[0], acts[0]);
