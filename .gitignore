@@ -56,3 +56,6 @@ dkms.conf
 
 # Mac specific files
 .DS_Store
+
+# vim
+*.swp
