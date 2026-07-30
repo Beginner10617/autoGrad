@@ -14,7 +14,7 @@ struct Value {
   Funcptr _backward, _forward;
   struct Value **_prev;
   size_t _prevsz, _prevcap;
-  bool _modifiable;
+  bool _modifiable, visited;
 };
 // Constructors
 Value *EmptyValue(bool modify);
@@ -509,10 +509,12 @@ Value *setNeuron(Neuron *neuron, Value **inputs) {
 #endif
     exit(EXIT_FAILURE);
   }
+  neuron->bias->visited = false;
   intermediate[size - 1] = neuron->bias;
   for (size_t i = 0; i < size - 1; i++) {
     intermediate[i] = EmptyValue(false);
     setMul(intermediate[i], neuron->weights[i], inputs[i]);
+    neuron->weights[i]->visited = false;
   }
   Value *output = EmptyValue(false);
   Value *tmp = EmptyValue(false);
@@ -674,8 +676,10 @@ Value *getValueAt(ValueList *lst, size_t index) {
 void topoSortList(Value *val, ValueList *lst) {
   if (val == NULL)
     return;
+  val->visited = true;
   for (size_t i = 0; i < val->_prevsz; i++) {
-    topoSortList(val->_prev[i], lst);
+    if (!val->_prev[i]->visited)
+      topoSortList(val->_prev[i], lst);
   }
   appendValue(lst, val);
 }
