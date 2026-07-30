@@ -696,6 +696,7 @@ void forward(ValueList *lst) {
   for (size_t i = 0; i < lst->size; i++) {
     tmp = lst->values[i];
     tmp->_forward(tmp);
+    tmp->grad = 0;
   }
 }
 void backward(ValueList *lst) {
