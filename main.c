@@ -154,6 +154,7 @@ void train(int iterations, float stepSize) {
     devn[i] = sum_value_vec(sq_error_delta[i], 10);
   }
   loss = sum_value_vec(devn, batch_size);
+  loss->grad = 1.0;
   //
   ValueList *val_lst = CreateValueList();
   topoSortList(loss, val_lst);
@@ -175,6 +176,8 @@ void train(int iterations, float stepSize) {
         for (int dig = 0; dig < 10; dig++)
           ground_truth[ipt][dig]->data = truth[ipt + off] == dig ? 1.0 : -1.0;
       }
+      clock_t t;
+
       forward(val_lst);
       backward(val_lst);
       gradientDescent(val_lst, stepSize);
@@ -197,7 +200,7 @@ void train(int iterations, float stepSize) {
              j + 1, num_of_batches, currLoss);
       fflush(stdout);
     }
-    saveMLP(mlp, "model.txt");
+    saveMLP(mlp, "model");
     printf(" saved model!\n");
   }
 }
