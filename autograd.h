@@ -734,7 +734,8 @@ void saveMLP(MLP *mlp, const char *Fname) {
     Layer *layer = mlp->layers[i];
     fwrite(&layer->num_of_neurons, sizeof(size_t), 1, file);
     fwrite(&layer->size_of_neurons, sizeof(size_t), 1, file);
-    fwrite(&layer->activation, sizeof(int), 1, file);
+    size_t act_func = (size_t)layer->activation;
+    fwrite(&act_func, sizeof(size_t), 1, file);
     for (size_t j = 0; j < layer->num_of_neurons; j++) {
       Neuron *neuron = layer->neurons[j];
       fwrite(&neuron->size, sizeof(size_t), 1, file);
@@ -777,7 +778,7 @@ MLP *loadMLP(const char *Fname) {
     mlp->layers[i]->num_of_neurons = mlp->num_of_outputs[i];
     mlp->layers[i]->size_of_neurons =
         i ? mlp->num_of_outputs[i - 1] : mlp->num_of_inputs;
-    fread(&mlp->layers[i]->activation, sizeof(int), 1, file);
+    fread(&mlp->layers[i]->activation, sizeof(size_t), 1, file);
     for (size_t j = 0; j < mlp->layers[i]->num_of_neurons; j++) {
       mlp->layers[i]->neurons[j] = malloc(sizeof(Neuron));
       mlp->layers[i]->neurons[j]->size = mlp->layers[i]->size_of_neurons;
@@ -801,8 +802,7 @@ int validate(const char *Fname) {
   if (file == NULL)
     return 1;
 
-  size_t mlp_num_of_inputs, mlp_num_of_layers;
-  int layer_activation;
+  size_t mlp_num_of_inputs, mlp_num_of_layers, layer_activation;
 
   if (!fread(&mlp_num_of_inputs, sizeof(size_t), 1, file))
     return 2;
@@ -816,7 +816,7 @@ int validate(const char *Fname) {
     return 4;
 
   for (size_t i = 0; i < mlp_num_of_layers; i++) {
-    if (!fread(&layer_activation, sizeof(int), 1, file))
+    if (!fread(&layer_activation, sizeof(size_t), 1, file))
       return 5;
 
     for (size_t j = 0; j < mlp_num_of_outputs[i]; j++) {
