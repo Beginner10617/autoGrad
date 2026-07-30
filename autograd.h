@@ -102,6 +102,13 @@ void backward(ValueList *lst);
 // modifying values - gradient descent
 void gradientDescent(ValueList *lst, double learningRate);
 
+// Save MLP parameters in a textfile
+void saveMLP(MLP *mlp, const char *Fname);
+// Load MLP from parameters specified in a textfile
+MLP *loadMLP(const char *Fname);
+// validate the file before parsing, non zero value in case of error
+int validate(const char *Fname);
+
 #ifdef AUTOGRAD_IMPLEMENTATION
 // Constructors
 Value *EmptyValue(bool modify) {
@@ -692,6 +699,134 @@ void gradientDescent(ValueList *lst, double learningRate) {
       lst->values[i]->data -= learningRate * lst->values[i]->grad;
     }
   }
+}
+
+// File system
+const char *error_messages[] = {
+    "",
+    "Unable to open file\n",
+    "EOF while reading num_of_inputs\n",
+    "EOF while reading num_of_layers\n",
+    "EOF while reading num_of_outputs\n",
+    "EOF while reading layer_activation\n",
+    "EOF while reading neuron_parameter\n",
+    "No EOF after completion of data\n",
+};
+
+void saveMLP(MLP *mlp, const char *Fname) {
+  FILE *file = fopen(Fname, "wb");
+  if (file == NULL) {
+#ifdef DEBUG
+    printf(ERROR "Not able to write to file %s\n" RESET, Fname);
+#endif
+    return;
+  }
+  fwrite(&mlp->num_of_inputs, sizeof(size_t), 1, file);
+  fwrite(&mlp->num_of_layers, sizeof(size_t), 1, file);
+  fwrite(mlp->num_of_outputs, sizeof(size_t), mlp->num_of_layers, file);
+  for (size_t i = 0; i < mlp->num_of_layers; i++) {
+    Layer *layer = mlp->layers[i];
+    fwrite(&layer->num_of_neurons, sizeof(size_t), 1, file);
+    fwrite(&layer->size_of_neurons, sizeof(size_t), 1, file);
+    fwrite(&layer->activation, sizeof(int), 1, file);
+    for (size_t j = 0; j < layer->num_of_neurons; j++) {
+      Neuron *neuron = layer->neurons[j];
+      fwrite(&neuron->size, sizeof(size_t), 1, file);
+      fwrite(&neuron->bias->data, sizeof(double), 1, file);
+      for (size_t k = 0; k < neuron->size; k++) {
+        fwrite(&neuron->weights[k]->data, sizeof(double), 1, file);
+      }
+    }
+  }
+}
+
+MLP *loadMLP(const char *Fname) {
+  int err = validate(Fname);
+  if (err) {
+#ifdef DEBUG
+    printf("%s", error_messages[err]);
+#endif
+    return NULL;
+  }
+  FILE *file = fopen(Fname, "rb");
+  if (file == NULL) {
+#ifdef DEBUG
+    printf("Unable to open file %s from loadMLP\n", Fname);
+#endif
+    return NULL;
+  }
+  MLP *mlp = malloc(sizeof(MLP));
+  if (mlp == NULL) {
+#ifdef DEBUG
+    printf("Unable to allocate space for mlp from loadMLP\n");
+#endif
+    return NULL;
+  }
+  fread(&mlp->num_of_inputs, sizeof(size_t), 1, file);
+  fread(&mlp->num_of_layers, sizeof(size_t), 1, file);
+  mlp->num_of_outputs = malloc(sizeof(size_t) * mlp->num_of_layers);
+  mlp->layers = malloc(sizeof(Layer **) * mlp->num_of_layers);
+  for (size_t i = 0; i < mlp->num_of_layers; i++) {
+    mlp->layers[i] = malloc(sizeof(Layer));
+    mlp->layers[i]->num_of_neurons = mlp->num_of_outputs[i];
+    mlp->layers[i]->size_of_neurons =
+        i ? mlp->num_of_outputs[i - 1] : mlp->num_of_inputs;
+    fread(&mlp->layers[i]->activation, sizeof(int), 1, file);
+    for (size_t j = 0; j < mlp->layers[i]->num_of_neurons; j++) {
+      mlp->layers[i]->neurons[j] = malloc(sizeof(Neuron));
+      mlp->layers[i]->neurons[j]->size = mlp->layers[i]->size_of_neurons;
+      mlp->layers[i]->neurons[j]->activation = mlp->layers[i]->activation;
+      mlp->layers[i]->neurons[j]->bias = malloc(sizeof(Value));
+      mlp->layers[i]->neurons[j]->bias->_modifiable = true;
+      mlp->layers[i]->neurons[j]->weights =
+          malloc(sizeof(Value *) * mlp->layers[i]->size_of_neurons);
+      for (size_t k = 0; k < mlp->layers[i]->size_of_neurons; k++)
+        mlp->layers[i]->neurons[j]->weights[k]->_modifiable = true;
+      fread(&mlp->layers[i]->neurons[j]->bias->data, sizeof(double), 1, file);
+      fread(mlp->layers[i]->neurons[j]->weights, sizeof(double),
+            mlp->layers[i]->size_of_neurons, file);
+    }
+  }
+  return mlp;
+}
+
+int validate(const char *Fname) {
+  FILE *file = fopen(Fname, "rb");
+  if (file == NULL)
+    return 1;
+
+  size_t mlp_num_of_inputs, mlp_num_of_layers;
+  int layer_activation;
+
+  if (!fread(&mlp_num_of_inputs, sizeof(size_t), 1, file))
+    return 2;
+
+  if (!fread(&mlp_num_of_layers, sizeof(size_t), 1, file))
+    return 3;
+
+  size_t mlp_num_of_outputs[mlp_num_of_layers];
+  if (fread(mlp_num_of_outputs, sizeof(size_t), mlp_num_of_layers, file) !=
+      mlp_num_of_layers)
+    return 4;
+
+  for (size_t i = 0; i < mlp_num_of_layers; i++) {
+    if (!fread(&layer_activation, sizeof(int), 1, file))
+      return 5;
+
+    for (size_t j = 0; j < mlp_num_of_outputs[i]; j++) {
+      size_t dimension = i ? mlp_num_of_outputs[i - 1] : mlp_num_of_inputs;
+      double neuron_parameter[dimension + 1];
+      if (fread(&neuron_parameter, sizeof(double), dimension + 1, file) !=
+          dimension + 1)
+        return 6;
+    }
+  }
+  if (fgetc(file) != EOF) {
+    fclose(file);
+    return 7;
+  }
+  fclose(file);
+  return 0;
 }
 #endif
 #endif
