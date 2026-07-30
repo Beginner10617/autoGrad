@@ -700,6 +700,7 @@ void forward(ValueList *lst) {
   }
 }
 void backward(ValueList *lst) {
+  lst->values[lst->size - 1]->grad = 1;
   Value *tmp;
   for (size_t i = lst->size; i > 0; i--) {
     tmp = lst->values[i - 1];

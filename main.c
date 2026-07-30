@@ -174,7 +174,6 @@ void train(int iterations, double stepSize) {
       }
 
       forward(val_lst);
-      loss->grad = 1;
       backward(val_lst);
       gradientDescent(val_lst, stepSize);
 
