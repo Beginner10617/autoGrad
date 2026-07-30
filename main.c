@@ -113,11 +113,11 @@ void train(int iterations, float stepSize) {
   fclose(fptrlabel);
   printf("Image data loaded!\n");
   printf("Opening MLP...\n");
-  MLP *mlp = loadMLP("model");
+  MLP *mlp = loadMLP("model.mod");
   actFunc tanh[] = {_tanh, _tanh, none};
   size_t outputs[] = {32, 16, 10};
   if (mlp == NULL) {
-    printf("model not found, creating new...\n");
+    printf("model.mod not found, creating new...\n");
     mlp = createMLP(3, image_size, outputs, tanh);
   }
 
@@ -200,7 +200,7 @@ void train(int iterations, float stepSize) {
              j + 1, num_of_batches, currLoss);
       fflush(stdout);
     }
-    saveMLP(mlp, "model");
+    saveMLP(mlp, "model.mod");
     printf(" saved model!\n");
   }
 }
