@@ -2,9 +2,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #define AUTOGRAD_IMPLEMENTATION
+#define DEBUG
 #include "autograd.h"
 #define BAR_WIDTH 50 // For progress bar
 
@@ -48,6 +50,7 @@ Value **sqValueArr(Value **x, size_t sz) {
     return NULL;
   Value **z = malloc(sizeof(Value *) * sz);
   for (int i = 0; i < sz; i++) {
+    z[i] = EmptyValue(false);
     setMul(z[i], x[i], x[i]);
   }
   return z;
@@ -58,9 +61,16 @@ Value *sum_value_vec(Value **x, int sz) {
     return NULL;
   Value *z = EmptyValue(false);
   setSum(z, sz);
-  for (int i = 1; i < sz; i++) {
+  for (int i = 0; i < sz; i++) {
     addToSum(z, x[i]);
   }
+  /*
+  for (int i = 0; i < z->_prevcap; i++) {
+    printf("sum arg : %p\n", z->_prev[i]);
+  }
+  int y;
+  scanf("%d", &y);
+  */
   return z;
 }
 
@@ -85,13 +95,15 @@ void train(int iterations, float stepSize) {
   int image_size = imgheader[2] * imgheader[3];
   uint8_t label = 0;
   uint8_t truth[labelheader[1]];
-  uint8_t all_images[imgheader[1]][image_size];
+  uint8_t **all_images =
+      malloc(sizeof(uint8_t *) * imgheader[1]); //[imgheader[1]][image_size];
 
   for (int i = 0; i < imgheader[1]; i++) {
     if (fread(&label, 1, 1, fptrlabel) != 1) {
       printf("Error reading label\n");
       break;
     }
+    all_images[i] = malloc(sizeof(uint8_t) * image_size);
     if (!readNextImage(all_images[i], image_size, fptrimg))
       break;
     truth[i] = label;
@@ -101,9 +113,9 @@ void train(int iterations, float stepSize) {
   fclose(fptrlabel);
   printf("Image data loaded!\n");
   printf("Opening MLP...\n");
-  MLP *mlp = loadMLP("model.txt");
+  MLP *mlp = loadMLP("model");
   actFunc tanh[] = {_tanh, _tanh, none};
-  size_t outputs[] = {32, 16, 10};
+  size_t outputs[] = {5, 5, 10};
   if (mlp == NULL) {
     printf("model not found, creating new...\n");
     mlp = createMLP(3, image_size, outputs, tanh);
@@ -112,17 +124,10 @@ void train(int iterations, float stepSize) {
   printf("Allocating memory for training data...\n");
 
   int batch_size = 10;
-  /*
-    Value ***ypred = malloc(sizeof(Value **) * batch_size);
-    Value ***dely = malloc(sizeof(Value **) * batch_size);
-    Value ***sqdely = malloc(sizeof(Value **) * batch_size);
-    Value **devn = malloc(sizeof(Value *) * batch_size);
-    Value *losssum;
-  */
   float currLoss;
 
   printf("Starting training loop...\n");
-  int asd, num_of_batches = imgheader[1] / batch_size;
+  int num_of_batches = imgheader[1] / batch_size;
 
   // set the tree
   Value ***input_matrix = malloc(sizeof(Value **) * batch_size);
@@ -139,32 +144,42 @@ void train(int iterations, float stepSize) {
       input_matrix[i][j] = EmptyValue(false);
     }
     predn_matrix[i] = setMLP(mlp, input_matrix[i]);
+    ground_truth[i] = malloc(sizeof(Value *) * 10);
+
+    for (int dig = 0; dig < 10; dig++)
+      ground_truth[i][dig] = EmptyValue(false);
+
     error_delta[i] = subValueArr(ground_truth[i], predn_matrix[i], 10);
     sq_error_delta[i] = sqValueArr(error_delta[i], 10);
     devn[i] = sum_value_vec(sq_error_delta[i], 10);
   }
   loss = sum_value_vec(devn, batch_size);
   //
+  ValueList *val_lst = CreateValueList();
+  topoSortList(loss, val_lst);
+  printf("Computation tree created!\n");
+  printf("Size of value list : %zu\n", val_lst->size);
 
   // training
   for (int iter = 0; iter < iterations; iter++) {
     for (int j = 0; j < num_of_batches; j++) {
       int off = j * batch_size;
-      /*
+
       for (int ipt = 0; ipt < batch_size && ipt + off < imgheader[1]; ipt++) {
-        ypred[ipt] = evaluateMLP(mlp, img_inputs[ipt + off]);
-        dely[ipt] = subValueArr(ground_truth[ipt + off], ypred[ipt], 10);
-        sqdely[ipt] = sqValueArr(dely[ipt], 10);
-        devn[ipt] = sum(sqdely[ipt], 10);
+        // instead of this (old code below)
+        // load image data into input_matrix
+        // load label data to ground_truth
+        for (int px = 0; px < image_size; px++)
+          input_matrix[ipt][px]->data = (double)all_images[ipt + off][px];
+
+        for (int dig = 0; dig < 10; dig++)
+          ground_truth[ipt][dig]->data = truth[ipt + off] == dig ? 1.0 : -1.0;
       }
-      losssum = sum(devn, batch_size);
+      forward(val_lst);
+      backward(val_lst);
+      gradientDescent(val_lst, stepSize);
 
-      loss itself would be the output of the tree
-      */
-      currLoss = losssum->data;
-      backPropagate(losssum);
-      gradientDescentMLP(mlp, stepSize);
-
+      currLoss = loss->data;
       // progress bar
       printf("\r[");
       int pos = ((j + 1) * BAR_WIDTH) / (num_of_batches);

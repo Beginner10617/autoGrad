@@ -1,6 +1,5 @@
 #ifndef PARSER_H
 #define PARSER_H
-#include "autograd.h"
 #include <stdint.h>
 #include <stdio.h>
 // Converts little-endian to big-endian
