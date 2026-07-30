@@ -517,11 +517,17 @@ Value *setNeuron(Neuron *neuron, Value **inputs) {
     neuron->weights[i]->visited = false;
   }
   Value *output = EmptyValue(false);
-  Value *tmp = EmptyValue(false);
-  setSum(tmp, size);
-  for (size_t i = 0; i < size; i++)
-    addToSum(tmp, intermediate[i]);
-  setTanh(output, tmp);
+  if (neuron->activation == _tanh) {
+    Value *tmp = EmptyValue(false);
+    setSum(tmp, size);
+    for (size_t i = 0; i < size; i++)
+      addToSum(tmp, intermediate[i]);
+    setTanh(output, tmp);
+  } else {
+    setSum(output, size);
+    for (size_t i = 0; i < size; i++)
+      addToSum(output, intermediate[i]);
+  }
   return output;
 }
 // helper function
