@@ -127,6 +127,7 @@ Value *EmptyValue(bool modify) {
   out->_prevsz = 0;
   out->_prevcap = 0;
   out->_modifiable = modify;
+  out->visited = false;
   return out;
 }
 
@@ -146,6 +147,7 @@ Value *floatToValue(float x, bool modify) {
   out->_prevsz = 0;
   out->_prevcap = 0;
   out->_modifiable = modify;
+  out->visited = false;
   return out;
 }
 
@@ -165,6 +167,7 @@ Value *doubleToValue(double x, bool modify) {
   out->_prevsz = 0;
   out->_prevcap = 0;
   out->_modifiable = modify;
+  out->visited = false;
   return out;
 }
 
@@ -485,7 +488,8 @@ Neuron *createNeuron(size_t sz, actFunc act) {
   }
   neuron->size = sz;
   neuron->activation = act;
-  neuron->bias = doubleToValue((double)rand() / (double)RAND_MAX, true);
+  neuron->bias =
+      doubleToValue(((double)rand() / (double)RAND_MAX) * 2.0 - 1.0, true);
   neuron->bias->_modifiable = true;
   neuron->weights = malloc(sizeof(Value *) * sz);
   if (neuron->weights == NULL) {
@@ -495,7 +499,8 @@ Neuron *createNeuron(size_t sz, actFunc act) {
     exit(EXIT_FAILURE);
   }
   for (size_t i = 0; i < sz; i++) {
-    neuron->weights[i] = doubleToValue((double)rand() / (double)RAND_MAX, true);
+    neuron->weights[i] =
+        doubleToValue(((double)rand() / (double)RAND_MAX) * 2.0 - 1.0, true);
     neuron->weights[i]->_modifiable = true;
   }
   return neuron;
@@ -509,12 +514,10 @@ Value *setNeuron(Neuron *neuron, Value **inputs) {
 #endif
     exit(EXIT_FAILURE);
   }
-  neuron->bias->visited = false;
   intermediate[size - 1] = neuron->bias;
   for (size_t i = 0; i < size - 1; i++) {
     intermediate[i] = EmptyValue(false);
     setMul(intermediate[i], neuron->weights[i], inputs[i]);
-    neuron->weights[i]->visited = false;
   }
   Value *output = EmptyValue(false);
   if (neuron->activation == _tanh) {
@@ -700,7 +703,7 @@ void forward(ValueList *lst) {
   }
 }
 void backward(ValueList *lst) {
-  lst->values[lst->size - 1]->grad = 1;
+  lst->values[lst->size - 1]->grad = 1.0;
   Value *tmp;
   for (size_t i = lst->size; i > 0; i--) {
     tmp = lst->values[i - 1];
