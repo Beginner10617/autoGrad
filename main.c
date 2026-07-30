@@ -74,7 +74,7 @@ Value *sum_value_vec(Value **x, int sz) {
   return z;
 }
 
-void train(int iterations, float stepSize) {
+void train(int iterations, double stepSize) {
 
   FILE *fptrimg, *fptrlabel;
 
@@ -95,8 +95,7 @@ void train(int iterations, float stepSize) {
   int image_size = imgheader[2] * imgheader[3];
   uint8_t label = 0;
   uint8_t truth[labelheader[1]];
-  uint8_t **all_images =
-      malloc(sizeof(uint8_t *) * imgheader[1]); //[imgheader[1]][image_size];
+  uint8_t **all_images = malloc(sizeof(uint8_t *) * imgheader[1]);
 
   for (int i = 0; i < imgheader[1]; i++) {
     if (fread(&label, 1, 1, fptrlabel) != 1) {
@@ -154,7 +153,6 @@ void train(int iterations, float stepSize) {
     devn[i] = sum_value_vec(sq_error_delta[i], 10);
   }
   loss = sum_value_vec(devn, batch_size);
-  loss->grad = 1.0;
   //
   ValueList *val_lst = CreateValueList();
   topoSortList(loss, val_lst);
@@ -167,22 +165,50 @@ void train(int iterations, float stepSize) {
       int off = j * batch_size;
 
       for (int ipt = 0; ipt < batch_size && ipt + off < imgheader[1]; ipt++) {
-        // instead of this (old code below)
-        // load image data into input_matrix
-        // load label data to ground_truth
         for (int px = 0; px < image_size; px++)
-          input_matrix[ipt][px]->data = (double)all_images[ipt + off][px];
+          input_matrix[ipt][px]->data =
+              ((double)all_images[ipt + off][px]) / 127.5 - 1.0;
 
         for (int dig = 0; dig < 10; dig++)
-          ground_truth[ipt][dig]->data = truth[ipt + off] == dig ? 1.0 : -1.0;
+          ground_truth[ipt][dig]->data = truth[ipt + off] == dig ? 1.0 : 0.0;
       }
-      clock_t t;
 
       forward(val_lst);
+      loss->grad = 1;
       backward(val_lst);
       gradientDescent(val_lst, stepSize);
 
       currLoss = loss->data;
+      /*
+            printf("\nLast layer, first neuron, first weight data and grad resp:
+         %f "
+                   "%f\n",
+                   mlp->layers[2]->neurons[0]->weights[0]->data,
+                   mlp->layers[2]->neurons[0]->weights[0]->grad);
+            printf("loss = %f %f\n", currLoss, loss->grad);
+            printf("output = [");
+            for (int o = 0; o < 10; o++)
+              printf("%f, ", predn_matrix[0][o]->data);
+            printf("]\n");
+            printf("ground = [");
+            for (int o = 0; o < 10; o++)
+              printf("%f, ", ground_truth[0][o]->data);
+            printf("]\n");
+            printf("delta  = [");
+            for (int o = 0; o < 10; o++)
+              printf("%f, ", error_delta[0][o]->data);
+            printf("]\n");
+            printf("sq_err = [");
+            for (int o = 0; o < 10; o++)
+              printf("%f, ", sq_error_delta[0][o]->data);
+            printf("]\n");
+            printf("devn   = [");
+            for (int o = 0; o < batch_size; o++)
+              printf("%f, ", devn[o]->data);
+            printf("]\n");
+            int ruf;
+            scanf("%d", &ruf);
+      */
       // progress bar
       printf("\r[");
       int pos = ((j + 1) * BAR_WIDTH) / (num_of_batches);
@@ -198,6 +224,7 @@ void train(int iterations, float stepSize) {
 
       printf("] iteration %d/%d batch %d/%d loss = %f", iter + 1, iterations,
              j + 1, num_of_batches, currLoss);
+
       fflush(stdout);
     }
     saveMLP(mlp, "model.mod");
@@ -207,6 +234,6 @@ void train(int iterations, float stepSize) {
 
 int main() {
   srand((unsigned int)time(NULL));
-  train(10, 0.005f);
+  train(10, 0.005);
   return 0;
 }
