@@ -1,5 +1,8 @@
 #include "parser.h"
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <time.h>
 #define AUTOGRAD_IMPLEMENTATION
 #include "autograd.h"
@@ -29,6 +32,38 @@ Value **imgDataToValueArray(uint8_t *img, int img_sz) {
   return out;
 }
 
+Value **subValueArr(Value **x, Value **y, size_t sz) {
+  if (sz == 0)
+    return NULL;
+  Value **z = malloc(sizeof(Value *) * sz);
+  for (int i = 0; i < sz; i++) {
+    z[i] = EmptyValue(false);
+    setSub(z[i], x[i], y[i]);
+  }
+  return z;
+}
+
+Value **sqValueArr(Value **x, size_t sz) {
+  if (sz == 0)
+    return NULL;
+  Value **z = malloc(sizeof(Value *) * sz);
+  for (int i = 0; i < sz; i++) {
+    setMul(z[i], x[i], x[i]);
+  }
+  return z;
+}
+
+Value *sum_value_vec(Value **x, int sz) {
+  if (sz == 0)
+    return NULL;
+  Value *z = EmptyValue(false);
+  setSum(z, sz);
+  for (int i = 1; i < sz; i++) {
+    addToSum(z, x[i]);
+  }
+  return z;
+}
+
 void train(int iterations, float stepSize) {
 
   FILE *fptrimg, *fptrlabel;
@@ -49,22 +84,17 @@ void train(int iterations, float stepSize) {
   // loading data from the dataset
   int image_size = imgheader[2] * imgheader[3];
   uint8_t label = 0;
-  Value ***ground_truth = malloc(sizeof(Value **) * labelheader[1]);
-  Value ***img_inputs = malloc(sizeof(Value **) * imgheader[1]);
-  uint8_t image[image_size];
+  uint8_t truth[labelheader[1]];
+  uint8_t all_images[imgheader[1]][image_size];
 
   for (int i = 0; i < imgheader[1]; i++) {
     if (fread(&label, 1, 1, fptrlabel) != 1) {
       printf("Error reading label\n");
       break;
     }
-
-    if (!readNextImage(image, image_size, fptrimg))
+    if (!readNextImage(all_images[i], image_size, fptrimg))
       break;
-    // load data to Value ground_truth[i]->{_, _, _, _, _, _, _, _, _, _},
-    // img_inputs[i] : convert [0,256) -> [-1,1],
-    ground_truth[i] = labelToValueArray(label);
-    img_inputs[i] = imgDataToValueArray(image, image_size);
+    truth[i] = label;
   }
 
   fclose(fptrimg);
@@ -82,17 +112,38 @@ void train(int iterations, float stepSize) {
   printf("Allocating memory for training data...\n");
 
   int batch_size = 10;
-  Value ***ypred = malloc(sizeof(Value **) * batch_size);
-  Value ***dely = malloc(sizeof(Value **) * batch_size);
-  Value ***sqdely = malloc(sizeof(Value **) * batch_size);
-  Value **devn = malloc(sizeof(Value *) * batch_size);
-  Value *losssum;
+  /*
+    Value ***ypred = malloc(sizeof(Value **) * batch_size);
+    Value ***dely = malloc(sizeof(Value **) * batch_size);
+    Value ***sqdely = malloc(sizeof(Value **) * batch_size);
+    Value **devn = malloc(sizeof(Value *) * batch_size);
+    Value *losssum;
+  */
   float currLoss;
 
   printf("Starting training loop...\n");
   int asd, num_of_batches = imgheader[1] / batch_size;
 
-  // set the tree here
+  // set the tree
+  Value ***input_matrix = malloc(sizeof(Value **) * batch_size);
+  Value ***predn_matrix = malloc(sizeof(Value **) * batch_size);
+  Value ***error_delta = malloc(sizeof(Value **) * batch_size);
+  Value ***sq_error_delta = malloc(sizeof(Value **) * batch_size);
+  Value **devn = malloc(sizeof(Value *) * batch_size);
+  Value ***ground_truth = malloc(sizeof(Value **) * batch_size);
+  Value ***img_inputs = malloc(sizeof(Value **) * batch_size);
+  Value *loss;
+  for (int i = 0; i < batch_size; i++) {
+    input_matrix[i] = malloc(sizeof(Value *) * image_size);
+    for (int j = 0; j < image_size; j++) {
+      input_matrix[i][j] = EmptyValue(false);
+    }
+    predn_matrix[i] = setMLP(mlp, input_matrix[i]);
+    error_delta[i] = subValueArr(ground_truth[i], predn_matrix[i], 10);
+    sq_error_delta[i] = sqValueArr(error_delta[i], 10);
+    devn[i] = sum_value_vec(sq_error_delta[i], 10);
+  }
+  loss = sum_value_vec(devn, batch_size);
   //
 
   // training
