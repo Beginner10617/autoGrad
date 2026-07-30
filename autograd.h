@@ -486,6 +486,7 @@ Neuron *createNeuron(size_t sz, actFunc act) {
   neuron->size = sz;
   neuron->activation = act;
   neuron->bias = doubleToValue((double)rand() / (double)RAND_MAX, true);
+  neuron->bias->_modifiable = true;
   neuron->weights = malloc(sizeof(Value *) * sz);
   if (neuron->weights == NULL) {
 #ifdef DEBUG
@@ -495,6 +496,7 @@ Neuron *createNeuron(size_t sz, actFunc act) {
   }
   for (size_t i = 0; i < sz; i++) {
     neuron->weights[i] = doubleToValue((double)rand() / (double)RAND_MAX, true);
+    neuron->weights[i]->_modifiable = true;
   }
   return neuron;
 }
@@ -514,7 +516,7 @@ Value *setNeuron(Neuron *neuron, Value **inputs) {
   }
   Value *output = EmptyValue(false);
   Value *tmp = EmptyValue(false);
-  setSum(output, size);
+  setSum(tmp, size);
   for (size_t i = 0; i < size; i++)
     addToSum(tmp, intermediate[i]);
   setTanh(output, tmp);
