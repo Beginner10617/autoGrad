@@ -609,11 +609,9 @@ MLP *createMLP(size_t num_of_layers, size_t num_of_inputs,
     exit(EXIT_FAILURE);
   }
   out->layers[0] = createLayer(num_of_inputs, num_of_outputs[0], acts[0]);
-  printf("act %d %d\n", 0, acts[0]);
   for (size_t i = 1; i < num_of_layers; i++) {
     out->layers[i] =
         createLayer(num_of_outputs[i - 1], num_of_outputs[i], acts[i]);
-    printf("act %d %d\n", 0, acts[i]);
   }
   return out;
 }
