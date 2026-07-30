@@ -118,5 +118,10 @@ int validate(const char *Fname) {
         return 6;
     }
   }
+  if (fgetc(file) != EOF) {
+    fclose(file);
+    return 7;
+  }
+  fclose(file);
   return 0;
 }
