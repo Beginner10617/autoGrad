@@ -56,7 +56,16 @@ int readNextImage(uint8_t *img, int img_size, FILE *ptr) {
   return 1;
 }
 
-const char *error_messages[] = {};
+const char *error_messages[] = {
+    "",
+    "Unable to open file\n",
+    "EOF while reading num_of_inputs\n",
+    "EOF while reading num_of_layers\n",
+    "EOF while reading num_of_outputs\n",
+    "EOF while reading layer_activation\n",
+    "EOF while reading neuron_parameter\n",
+    "No EOF after completion of data\n",
+};
 
 void saveMLP(MLP *mlp, const char *Fname) {
   FILE *file = fopen(Fname, "wb");
@@ -85,7 +94,52 @@ void saveMLP(MLP *mlp, const char *Fname) {
   }
 }
 
-MLP *loadMLP(const char *Fname) { return NULL; }
+MLP *loadMLP(const char *Fname) {
+  int err = validate(Fname);
+  if (err) {
+#ifdef DEBUG
+    printf("%s", error_messages[err]);
+#endif
+    return NULL;
+  }
+  FILE *file = fopen(Fname, "rb");
+  if (file == NULL) {
+#ifdef DEBUG
+    printf("Unable to open file %s from loadMLP\n", Fname);
+#endif
+    return NULL;
+  }
+  MLP *mlp = malloc(sizeof(MLP));
+  if (mlp == NULL) {
+#ifdef DEBUG
+    printf("Unable to allocate space for mlp from loadMLP\n");
+#endif
+    return NULL;
+  }
+  fread(&mlp->num_of_inputs, sizeof(size_t), 1, file);
+  fread(&mlp->num_of_layers, sizeof(size_t), 1, file);
+  mlp->num_of_outputs = malloc(sizeof(size_t) * mlp->num_of_layers);
+  mlp->layers = malloc(sizeof(Layer **) * mlp->num_of_layers);
+  for (size_t i = 0; i < mlp->num_of_layers; i++) {
+    mlp->layers[i] = malloc(sizeof(Layer));
+    mlp->layers[i]->num_of_neurons = mlp->num_of_outputs[i];
+    mlp->layers[i]->size_of_neurons =
+        i ? mlp->num_of_outputs[i - 1] : mlp->num_of_inputs;
+    fread(&mlp->layers[i]->activation, sizeof(int), 1, file);
+    for (size_t j = 0; j < mlp->layers[i]->num_of_neurons; j++) {
+      mlp->layers[i]->neurons[j] = malloc(sizeof(Neuron));
+      mlp->layers[i]->neurons[j]->size = mlp->layers[i]->size_of_neurons;
+      mlp->layers[i]->neurons[j]->activation = mlp->layers[i]->activation;
+      mlp->layers[i]->neurons[j]->bias = malloc(sizeof(Value));
+      mlp->layers[i]->neurons[j]->weights =
+          malloc(sizeof(Value *) * mlp->layers[i]->size_of_neurons);
+      fread(&mlp->layers[i]->neurons[j]->bias->data, sizeof(double), 1, file);
+      fread(mlp->layers[i]->neurons[j]->weights, sizeof(double),
+            mlp->layers[i]->size_of_neurons, file);
+    }
+  }
+  return mlp;
+}
 
 int validate(const char *Fname) {
   FILE *file = fopen(Fname, "rb");
