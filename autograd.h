@@ -468,14 +468,11 @@ void doNothing(Value *x) { return; }
 void printValue(Value *x) { printf("data: %f\ngrad: %f\n", x->data, x->grad); }
 
 void Destroy(Value **x) {
-  if (x == NULL)
+  if (x == NULL || *x == NULL)
     return;
-  if (*x == NULL) {
-    x = NULL;
-    return;
-  }
+
   free(*x);
-  x = NULL;
+  *x = NULL;
 }
 // NEURON
 Neuron *createNeuron(size_t sz, actFunc act) {
