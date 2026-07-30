@@ -1,0 +1,14 @@
+Format should be binary, all data is of 8 byte width, except activation which is 4 byte
+Weights are double, everything else is unsigned (except weights of course)
+
+<num-of-inputs> <num-of-layers> <num_of_outputs[num-of-layers]>
+FOR i IN [0,<num-of-layers>)
+  <activation>
+  FOR j IN [0, <num_of_outputs[i]>)
+    <bias-data>
+    FOR k IN [0, i ? <num_of_outputs[i-1]> : <num-of-inputs>)
+      <weight-data>
+    END FOR
+  END FOR
+END FOR
+

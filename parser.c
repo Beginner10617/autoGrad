@@ -62,7 +62,7 @@ void saveMLP(MLP *mlp, const char *Fname) {
   FILE *file = fopen(Fname, "wb");
   if (file == NULL) {
 #ifdef DEBUG
-    printf(ERROR "Not able to write to file %s" RESET, Fname);
+    printf(ERROR "Not able to write to file %s\n" RESET, Fname);
 #endif
     return;
   }
@@ -87,4 +87,36 @@ void saveMLP(MLP *mlp, const char *Fname) {
 
 MLP *loadMLP(const char *Fname) { return NULL; }
 
-int validate(const char *Fname) { return 0; }
+int validate(const char *Fname) {
+  FILE *file = fopen(Fname, "rb");
+  if (file == NULL)
+    return 1;
+
+  size_t mlp_num_of_inputs, mlp_num_of_layers;
+  int layer_activation;
+
+  if (!fread(&mlp_num_of_inputs, sizeof(size_t), 1, file))
+    return 2;
+
+  if (!fread(&mlp_num_of_layers, sizeof(size_t), 1, file))
+    return 3;
+
+  size_t mlp_num_of_outputs[mlp_num_of_layers];
+  if (fread(mlp_num_of_outputs, sizeof(size_t), mlp_num_of_layers, file) !=
+      mlp_num_of_layers)
+    return 4;
+
+  for (size_t i = 0; i < mlp_num_of_layers; i++) {
+    if (!fread(&layer_activation, sizeof(int), 1, file))
+      return 5;
+
+    for (size_t j = 0; j < mlp_num_of_outputs[i]; j++) {
+      size_t dimension = i ? mlp_num_of_outputs[i - 1] : mlp_num_of_inputs;
+      double neuron_parameter[dimension + 1];
+      if (fread(&neuron_parameter, sizeof(double), dimension + 1, file) !=
+          dimension + 1)
+        return 6;
+    }
+  }
+  return 0;
+}
