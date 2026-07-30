@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "autograd.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -131,8 +132,11 @@ MLP *loadMLP(const char *Fname) {
       mlp->layers[i]->neurons[j]->size = mlp->layers[i]->size_of_neurons;
       mlp->layers[i]->neurons[j]->activation = mlp->layers[i]->activation;
       mlp->layers[i]->neurons[j]->bias = malloc(sizeof(Value));
+      mlp->layers[i]->neurons[j]->bias->_modifiable = true;
       mlp->layers[i]->neurons[j]->weights =
           malloc(sizeof(Value *) * mlp->layers[i]->size_of_neurons);
+      for (size_t k = 0; k < mlp->layers[i]->size_of_neurons; k++)
+        mlp->layers[i]->neurons[j]->weights[k]->_modifiable = true;
       fread(&mlp->layers[i]->neurons[j]->bias->data, sizeof(double), 1, file);
       fread(mlp->layers[i]->neurons[j]->weights, sizeof(double),
             mlp->layers[i]->size_of_neurons, file);
