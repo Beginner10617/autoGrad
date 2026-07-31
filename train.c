@@ -10,30 +10,6 @@
 #include "autograd.h"
 #define BAR_WIDTH 50 // For progress bar
 
-Value **labelToValueArray(int x) {
-  if (x < 0 || x > 9)
-    return NULL;
-  Value **out = malloc(sizeof(Value *) * 10);
-  for (int i = 0; i < 10; i++) {
-    if (i == x)
-      out[i] = doubleToValue(1.0, false);
-    else
-      out[i] = doubleToValue(0.0f, false);
-  }
-  return out;
-};
-
-Value **imgDataToValueArray(uint8_t *img, int img_sz) {
-  // convert image data [0,255] into an array
-  // of same size with values [-1.0f, 1.0f]
-  // Use linear scaling
-  Value **out = malloc(sizeof(Value *) * img_sz);
-  for (int i = 0; i < img_sz; i++) {
-    out[i] = doubleToValue(img[i] / 127.5 - 1, false);
-  }
-  return out;
-}
-
 Value **subValueArr(Value **x, Value **y, size_t sz) {
   if (sz == 0)
     return NULL;
@@ -64,13 +40,6 @@ Value *sum_value_vec(Value **x, int sz) {
   for (int i = 0; i < sz; i++) {
     addToSum(z, x[i]);
   }
-  /*
-  for (int i = 0; i < z->_prevcap; i++) {
-    printf("sum arg : %p\n", z->_prev[i]);
-  }
-  int y;
-  scanf("%d", &y);
-  */
   return z;
 }
 
@@ -182,10 +151,10 @@ void train(int iterations, double stepSize) {
         if (val_lst->values[i]->_modifiable) {
           max_grad = max_grad > fabs(val_lst->values[i]->grad)
                          ? max_grad
-                         : val_lst->values[i]->grad;
+                         : fabs(val_lst->values[i]->grad);
           max_param = max_param > fabs(val_lst->values[i]->data)
-                          ? max_grad
-                          : val_lst->values[i]->data;
+                          ? max_param
+                          : fabs(val_lst->values[i]->data);
         }
       }
       currLoss = loss->data;
@@ -242,10 +211,12 @@ void train(int iterations, double stepSize) {
     saveMLP(mlp, "model.agm");
     printf("saved model!\n");
   }
+  DestroyGraph(&val_lst);
+  DestroyMLP(&mlp);
 }
 
 int main() {
   srand((unsigned int)time(NULL));
-  train(10, 0.005);
+  train(1, 0.0025);
   return 0;
 }
