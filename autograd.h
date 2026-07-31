@@ -45,7 +45,7 @@ void doNothing(Value *x);
 // print
 void printValue(Value *x);
 // Destructors
-void Destroy(Value **x);
+void DestroyValue(Value **x);
 
 // 1. Use set() to make the training computation tree
 // 2. Topologically sort using the final node
@@ -63,6 +63,7 @@ struct Neuron {
 Neuron *createNeuron(size_t sz, actFunc act);
 Value *setNeuron(Neuron *neuron, Value **inputs);
 void printNeuron(Neuron *neuron);
+void DestroyNeuron(Neuron **neuron);
 
 struct Layer {
   size_t num_of_neurons, size_of_neurons;
@@ -72,6 +73,7 @@ struct Layer {
 Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act);
 Value **setLayer(Layer *layer, Value **inputs);
 void printLayer(Layer *layer);
+void DestroyLayer(Layer **layer);
 
 struct MLP {
   size_t *num_of_outputs;
@@ -82,6 +84,7 @@ MLP *createMLP(size_t num_of_layers, size_t num_of_inputs,
                size_t *num_of_outputs, actFunc *acts);
 Value **setMLP(MLP *mlp, Value **inputs);
 void printMLP(MLP *mlp);
+void DestroyMLP(MLP **mlp);
 
 typedef struct ValueList ValueList;
 
@@ -101,6 +104,7 @@ void forward(ValueList *lst);
 void backward(ValueList *lst);
 // modifying values - gradient descent
 void gradientDescent(ValueList *lst, double learningRate);
+void DestroyNonModifiable(ValueList **lst);
 
 // Save MLP parameters in a textfile
 void saveMLP(MLP *mlp, const char *Fname);
@@ -467,7 +471,7 @@ void doNothing(Value *x) { return; }
 
 void printValue(Value *x) { printf("data: %f\ngrad: %f\n", x->data, x->grad); }
 
-void Destroy(Value **x) {
+void DestroyValue(Value **x) {
   if (x == NULL || *x == NULL)
     return;
 
@@ -547,6 +551,21 @@ void printNeuron(Neuron *neuron) {
   }
   printf("\n");
 }
+void DestroyNeuron(Neuron **neuron) {
+  if (neuron == NULL || *neuron == NULL)
+    return;
+
+  for (size_t i = 0; i < (*neuron)->size; i++)
+    DestroyValue(&(*neuron)->weights[i]);
+
+  free((*neuron)->weights);
+  (*neuron)->weights = NULL;
+
+  DestroyValue(&(*neuron)->bias);
+
+  free(*neuron);
+  *neuron = NULL;
+}
 
 // LAYER
 Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act) {
@@ -592,6 +611,19 @@ void printLayer(Layer *layer) {
          layer->num_of_neurons, layer->size_of_neurons);
   for (size_t i = 0; i < layer->num_of_neurons; i++)
     printNeuron(layer->neurons[i]);
+}
+void DestroyLayer(Layer **layer) {
+  if (layer == NULL || *layer == NULL)
+    return;
+
+  for (size_t i = 0; i < (*layer)->num_of_neurons; i++)
+    DestroyNeuron(&(*layer)->neurons[i]);
+
+  free((*layer)->neurons);
+  (*layer)->neurons = NULL;
+
+  free(*layer);
+  *layer = NULL;
 }
 
 // MLP
@@ -643,6 +675,23 @@ void printMLP(MLP *mlp) {
   }
   for (size_t i = 0; i < mlp->num_of_layers; i++)
     printLayer(mlp->layers[i]);
+}
+
+void DestroyMLP(MLP **mlp) {
+  if (mlp == NULL || *mlp == NULL)
+    return;
+
+  for (size_t i = 0; i < (*mlp)->num_of_layers; i++)
+    DestroyLayer(&(*mlp)->layers[i]);
+
+  free((*mlp)->layers);
+  (*mlp)->layers = NULL;
+
+  free((*mlp)->num_of_outputs);
+  (*mlp)->num_of_outputs = NULL;
+
+  free(*mlp);
+  *mlp = NULL;
 }
 
 ValueList *CreateValueList() {
@@ -714,6 +763,22 @@ void gradientDescent(ValueList *lst, double learningRate) {
       lst->values[i]->data -= learningRate * lst->values[i]->grad;
     }
   }
+}
+
+void DestroyGraph(ValueList **lst) {
+  if (lst == NULL || *lst == NULL)
+    return;
+
+  for (size_t i = 0; i < (*lst)->size; i++) {
+    if (!(*lst)->values[i]->_modifiable)
+      DestroyValue(&(*lst)->values[i]);
+  }
+
+  free((*lst)->values);
+  (*lst)->values = NULL;
+
+  free(*lst);
+  *lst = NULL;
 }
 
 // File system
