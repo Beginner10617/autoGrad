@@ -1,6 +1,6 @@
 # AutoGrad
 
-A tiny **single-header automatic differentiation engine** written in C.
+A tiny **single-header automatic differentiation engine** written in C. (499 semi-colons)
 
 AutoGrad implements a reusable **static computation graph** supporting:
 
@@ -9,7 +9,31 @@ AutoGrad implements a reusable **static computation graph** supporting:
 * Topological sorting of computation graphs
 * Gradient descent using a precomputed topological ordering
 
-Currently supported operations:
+Unlike dynamic autograd systems, the computation graph is **constructed once** and reused throughout training, avoiding repeated graph allocation and improving execution efficiency.
+
+---
+
+## Features
+
+* Single-header library (`autograd.h`)
+* Static computation graph
+* Forward and backward propagation
+* Reverse-mode automatic differentiation
+* Topological graph traversal
+* Gradient descent
+* Neural network primitives
+  * `Neuron`
+  * `Layer`
+  * `MLP`
+* Model serialization/deserialization
+* MNIST dataset parser
+* Minimal dependencies (standard C library)
+
+---
+
+## Supported Operations
+
+Current scalar operations include:
 
 * Addition (`+`)
 * Subtraction (`-`)
@@ -17,207 +41,228 @@ Currently supported operations:
 * Summation (`Σ`)
 * Hyperbolic tangent (`tanh`)
 
-The library also includes basic neural network building blocks:
-
-* `Neuron`
-* `Layer`
-* `MLP` (Multi-Layer Perceptron)
-
-These components are implemented but are still undergoing testing.
+Additional mathematical operations can be added by defining the corresponding forward and backward functions.
 
 ---
 
-## Features
+# Getting Started
 
-* Single-header library
-* Static computation graph (build once, reuse indefinitely)
-* No graph reconstruction between iterations
-* Forward and backward propagation
-* Topological graph traversal
-* Simple neural network primitives
-* Minimal dependencies (standard C)
-
----
-
-## Getting Started
-
-Include the header normally wherever the API is needed:
+Include the header wherever the API is required:
 
 ```c
 #include "autograd.h"
 ```
 
-In **exactly one** source file, define the implementation macro before including the header:
+In **exactly one** source file:
 
 ```c
 #define AUTOGRAD_IMPLEMENTATION
 #include "autograd.h"
 ```
 
-Compile your program as usual:
+Compile normally:
 
 ```bash
-gcc main.c -o output
-```
-
-Run:
-
-```bash
-./output
+gcc train.c parser.c -lm -o train
+gcc test.c parser.c -lm -o test
 ```
 
 ---
 
-## Core Idea
+# Project Structure
 
-Unlike the previous autograd implementation in
-[CMNIST](https://github.com/Beginner10617/CMNIST.git),
-which rebuilt the computation graph during every forward pass, this engine constructs the graph only once.
-
-After construction, the same graph can be reused for:
-
-* Multiple forward passes
-* Multiple backward passes
-* Gradient descent updates
-* Updating input values without reallocating graph nodes
-
-This design is similar to a **static computation graph**, where graph construction and graph execution are separate stages.
-
----
-
-## Example
-
-A simple computation graph demonstrating the library is implemented in `main.c`.
-
-The computed outputs and gradients have been verified against the expected mathematical values.
-
-<div align="center">
-<img src="example-1.jpg" alt="Example computation graph" width="400" height="167">
-</div>
+```text
+.
+├── autograd.h          # Single-header autograd library
+├── parser.c
+├── parser.h            # MNIST parser
+├── train.c             # Training program
+├── test.c              # Model evaluation
+├── model.agm           # Saved model
+├── FORMAT.txt          # Format description of agm files
+├── dataset/
+│   ├── train-images-idx3-ubyte
+│   ├── train-labels-idx1-ubyte
+│   ├── t10k-images-idx3-ubyte
+│   └── t10k-labels-idx1-ubyte
+└── README.md
+```
 
 ---
 
-## Forward Pass
+# Core Idea
+
+Unlike the previous autograd implementation in [CMNIST](https://github.com/Beginner10617/CMNIST.git), this engine constructs the graph only once.
+
+AutoGrad instead separates:
+
+1. Graph construction
+2. Graph execution
+
+The graph is allocated once and can then be reused for:
+
+* Forward propagation
+* Backpropagation
+* Gradient descent
+* Updating input values
+
+No graph reconstruction is required between iterations.
+
+---
+
+# Forward Pass
 
 Each `Value` node stores:
 
-* Current scalar value
-* Gradient
+* Scalar value (`data`)
+* Gradient (`grad`)
 * References to parent nodes
-* The operation used to compute the value
+* Forward function
+* Backward function
 
-Calling
+Forward execution is performed in topological order.
 
-```c
-node->_forward(node);
-```
-
-computes the node using the values of its dependencies.
-
-Forward execution should follow a topological ordering of the graph.
-
-This ordering only needs to be computed once after graph construction:
+The ordering only needs to be computed once:
 
 ```c
 ValueList topo;
 topoSortList(output, &topo);
 ```
 
-The resulting ordering can then be reused throughout training:
-
-```text
-forward()
-backward()
-gradientDescent()
-```
-
-No additional graph allocation occurs during these iterations.
+The same ordering can then be reused throughout training.
 
 ---
 
-## Backward Pass
+# Backward Pass
 
 Gradients are computed using reverse-mode automatic differentiation.
-
-Initialize the output node:
 
 ```c
 output->grad = 1;
 ```
 
-Then traverse the graph in reverse topological order:
+Then iterate in reverse topological order:
 
 ```text
 for node in reverse(topological_order):
     node->_backward(node)
 ```
 
-Each operation accumulates gradient contributions into its parent nodes.
+Each operation propagates gradients to its parent nodes according to the chain rule.
 
 ---
 
-## Neural Network Components
+# Neural Network API
 
-The project includes simple neural network abstractions built entirely on top of the autograd engine:
+The library provides lightweight neural-network abstractions built directly on top of the autograd engine:
 
 * `Neuron`
 * `Layer`
 * `MLP`
 
-These components are functional but still require additional testing and validation.
+These components support:
 
-The intended benchmark is training on the MNIST handwritten digit dataset.
-
----
-
-## MNIST Dataset Support
-
-A parser for the binary MNIST dataset format has been implemented.
-
-The current task is to train and evaluate the included MLP implementation on the MNIST dataset.
+* Forward inference
+* Backpropagation
+* Gradient descent
+* Parameter serialization
 
 ---
 
-## Design
+# MNIST Example
 
-Each `Value` node stores:
+The repository includes a complete handwritten digit classification example.
 
-* Scalar value (`data`)
-* Gradient (`grad`)
-* References to parent nodes (`_prev`)
-* Forward function pointer (`_forward`)
-* Backward function pointer (`_backward`)
+Components include:
 
-Graphs are manually constructed using helper functions such as
+* Binary MNIST dataset parser
+* MLP training program (`train.c`)
+* Model serialization (`model.agm`)
+* Model evaluation (`test.c`)
+
+Example evaluation output:
+
+```text
+loading dataset header
+-------------------------
+magic number: 2051
+number of images: 10000
+number of rows: 28
+number of columns: 28
+-------------------------
+-------------------------
+magic number: 2049
+number of images: 10000
+-------------------------
+setting up tree
+loading dataset
+
+8117 correct out of 10000 cases
+81.170% accuracy
+```
+
+---
+
+# Model Format
+
+Trained models are stored in the binary `.agm` format.
+
+The serialized model contains:
+
+* Network architecture
+* Activation functions
+* Bias parameters
+* Weight parameters
+
+This allows trained networks to be loaded without retraining.
+
+---
+
+# Design
+
+Each `Value` stores only the information necessary for automatic differentiation:
+
+* Current scalar value
+* Gradient
+* Parent nodes
+* Forward callback
+* Backward callback
+
+Graphs are constructed manually using helper functions such as:
 
 ```c
 setAdd(out, x, y);
 ```
 
-Once constructed, the graph can be reused indefinitely without further allocation.
+Because graph topology never changes, allocations occur only during graph construction.
 
 ---
 
-## Possible Improvements
+# Future Work
 
-* Additional mathematical operations
+Possible extensions include:
 
-  * Division
-  * Exponentials
-  * Power
-  * `ReLU`
-  * Additional activation functions
-* MNIST training examples
-* Additional optimizers (Momentum, Adam, RMSProp)
-* Vector and tensor support
+* Division
+* Exponential
+* Logarithm
+* Power
+* ReLU
+* Sigmoid
+* Softmax
+* Additional optimizers
+  * Momentum
+  * RMSProp
+  * Adam
+* Vector and tensor operations
+* SIMD optimizations
+* Batch training support
 
 ---
 
-## Inspiration
+# Inspiration
 
 While building a handwritten digit classifier in C in
 [CMNIST](https://github.com/Beginner10617/CMNIST.git),
 I noticed that rebuilding the computation graph every forward pass resulted in repeated memory allocation and deallocation.
 
-This project explores a reusable static graph design where the computation graph is constructed once and then reused across all subsequent iterations, reducing overhead while keeping the implementation compact and easy to understand.
-
+This project explores a reusable static graph design where the computation graph is constructed once and then reused across all 
