@@ -217,6 +217,6 @@ void train(int iterations, double stepSize) {
 
 int main() {
   srand((unsigned int)time(NULL));
-  train(1, 0.0025);
+  train(10, 0.005);
   return 0;
 }
