@@ -1,3 +1,178 @@
+/*
+===============================================================================
+
+                                  AUTOGRAD
+
+A lightweight automatic differentiation library implemented as a single
+STB-style header.
+
+The library provides:
+
+  - Scalar automatic differentiation using computation graphs.
+  - Basic arithmetic operations (+, -, *, tanh).
+  - Forward and backward graph traversal.
+  - Simple feed-forward neural networks (Neuron, Layer, MLP).
+  - Gradient descent utilities.
+  - Model serialization.
+
+===============================================================================
+
+USAGE
+
+Exactly one translation unit should define
+
+    #define AUTOGRAD_IMPLEMENTATION
+    #include "autograd.h"
+
+All other source files should simply include the header.
+
+===============================================================================
+
+COMPUTATION GRAPH
+
+Each Value represents a scalar in the computation graph.
+
+Graphs are built by calling the set*() functions. These functions assign an
+operation to an existing output Value rather than allocating a new one.
+
+Example:
+
+    Value *x = doubleToValue(..., false);
+    Value *y = doubleToValue(..., false);
+    Value *z = EmptyValue(false);
+
+    setMul(z, x, y);
+
+The graph is then topologically sorted beginning from the final output node.
+
+===============================================================================
+
+TYPICAL TRAINING WORKFLOW
+
+1. Construct an MLP.
+
+2. Create input Value objects.
+
+3. Execute
+
+       Value **output = setMLP(...);
+
+4. Build the loss using set*() operations.
+
+5. Generate a topological ordering.
+
+       ValueList *lst = CreateValueList();
+       topoSortList(loss, lst);
+
+6. Training loop
+
+       forward(lst);
+       backward(lst);
+       gradientDescent(lst, learning_rate);
+
+7. Free intermediate graph nodes.
+
+       DestroyGraph(&lst);
+
+8. Destroy the model.
+
+       DestroyMLP(&mlp);
+
+===============================================================================
+
+MEMORY OWNERSHIP
+
+MLP owns
+
+    - Layers
+    - Neurons
+    - Weights
+    - Biases
+
+DestroyMLP() releases only these model parameters.
+
+Intermediate Values created during forward propagation are NOT owned by the
+MLP. They are expected to be released through DestroyGraph() after
+training or inference.
+
+Input Values and target Values are owned by the caller.
+
+NOTE : DestroyMLP() should never be called before DestroyGraph()
+
+===============================================================================
+
+MODIFIABLE VALUES
+
+Each Value contains a '_modifiable' flag.
+
+_modifiable == true
+
+    Indicates a trainable parameter (weights/biases). These values are updated
+    by gradientDescent() and survive DestroyGraph().
+
+_modifiable == false
+
+    Indicates an intermediate graph node, input, target, loss, or any other
+    temporary value. These are intended to be destroyed once the computation
+    graph is no longer needed.
+
+===============================================================================
+
+FORWARD/BACKWARD PASSES
+
+forward()
+
+    Executes stored forward functions in topological order.
+
+backward()
+
+    Executes backward functions in reverse topological order.
+
+The ValueList should be computed once using topoSortList() and may be reused
+across multiple optimization iterations provided the graph structure does not
+change.
+
+===============================================================================
+
+SERIALIZATION
+
+saveMLP()
+
+    Writes all trainable parameters to disk.
+
+loadMLP()
+
+    Restores an MLP from a previously saved parameter file.
+
+validate()
+
+    Checks whether a serialized model file is well-formed before parsing.
+
+===============================================================================
+
+MIT License
+
+Copyright (c) 2026 Wasi Husain
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the “Software”), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+===============================================================================
+*/
 #ifndef AUTOGRAD
 #define AUTOGRAD
 #include <math.h>
@@ -104,7 +279,7 @@ void forward(ValueList *lst);
 void backward(ValueList *lst);
 // modifying values - gradient descent
 void gradientDescent(ValueList *lst, double learningRate);
-void DestroyNonModifiable(ValueList **lst);
+void DestroyGraph(ValueList **lst);
 
 // Save MLP parameters in a textfile
 void saveMLP(MLP *mlp, const char *Fname);
