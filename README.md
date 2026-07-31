@@ -196,9 +196,7 @@ number of images: 10000
 -------------------------
 setting up tree
 loading dataset
-
-8117 correct out of 10000 cases
-81.170% accuracy
+8997 correct out of 10000 cases 89.970% accuracy
 ```
 
 ---

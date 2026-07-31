@@ -1,0 +1,14 @@
+loading dataset header
+-------------------------
+magic number: 2051
+number of images: 10000
+number of rows: 28
+number of columns: 28
+-------------------------
+-------------------------
+magic number: 2049
+number of images: 10000
+-------------------------
+setting up tree
+loading dataset
+8997 correct out of 10000 cases 89.970% accuracy

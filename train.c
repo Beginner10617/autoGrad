@@ -130,7 +130,7 @@ void train(int iterations, double stepSize) {
 
   // training
   for (int iter = 0; iter < iterations; iter++) {
-    double max_grad = 0, max_param = 0;
+    double max_grad = 0, max_param = 0, max_loss = 0;
     for (int j = 0; j < num_of_batches; j++) {
       int off = j * batch_size;
 
@@ -158,37 +158,9 @@ void train(int iterations, double stepSize) {
         }
       }
       currLoss = loss->data;
-      /*
-            printf("\nLast layer, first neuron, first weight data and grad resp:
-         %f "
-                   "%f\n",
-                   mlp->layers[2]->neurons[0]->weights[0]->data,
-                   mlp->layers[2]->neurons[0]->weights[0]->grad);
-            printf("loss = %f %f\n", currLoss, loss->grad);
-            printf("output = [");
-            for (int o = 0; o < 10; o++)
-              printf("%f, ", predn_matrix[0][o]->data);
-            printf("]\n");
-            printf("ground = [");
-            for (int o = 0; o < 10; o++)
-              printf("%f, ", ground_truth[0][o]->data);
-            printf("]\n");
-            printf("delta  = [");
-            for (int o = 0; o < 10; o++)
-              printf("%f, ", error_delta[0][o]->data);
-            printf("]\n");
-            printf("sq_err = [");
-            for (int o = 0; o < 10; o++)
-              printf("%f, ", sq_error_delta[0][o]->data);
-            printf("]\n");
-            printf("devn   = [");
-            for (int o = 0; o < batch_size; o++)
-              printf("%f, ", devn[o]->data);
-            printf("]\n");
-            int ruf;
-            scanf("%d", &ruf);
-      */
-      // progress bar
+      max_loss = max_loss > currLoss ? max_loss : currLoss;
+
+     // progress bar
       printf("\r[");
       int pos = ((j + 1) * BAR_WIDTH) / (num_of_batches);
 
@@ -206,8 +178,8 @@ void train(int iterations, double stepSize) {
 
       fflush(stdout);
     }
-    printf("\nIteration: %d\nLoss: %f\nMax |grad|: %f\nMax |param|: %f\n", iter,
-           loss->data, max_grad, max_param);
+    printf("\nIteration: %d\nMax Loss: %f\nMax |grad|: %f\nMax |param|: %f\n", iter,
+           max_loss, max_grad, max_param);
     saveMLP(mlp, "model.agm");
     printf("saved model!\n");
   }
@@ -217,6 +189,6 @@ void train(int iterations, double stepSize) {
 
 int main() {
   srand((unsigned int)time(NULL));
-  train(10, 0.005);
+  train(10, 0.0005);
   return 0;
 }
