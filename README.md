@@ -207,7 +207,7 @@ Others:                0.00%
 Total time:            586.63s
 ```
 
-The static computation tree eliminates the major de-allocation overhead, reducing training time from **2884.09s to 582.36s (~4.9× speedup)**.
+The static computation tree eliminates the major de-allocation overhead, reducing training time from **2884.09s to 586.63s (~4.9× speedup)**.
 
 The remaining bottlenecks are **forward and backward propagation**. Using **vector-valued nodes** and SIMD can exploit data-level parallelism and further improve performance.
 
