@@ -44,6 +44,7 @@ Value *sum_value_vec(Value **x, int sz) {
 }
 
 void train(int iterations, double stepSize) {
+  struct timespec start, end;
 
   FILE *fptrimg, *fptrlabel;
 
@@ -129,11 +130,15 @@ void train(int iterations, double stepSize) {
   printf("Size of value list : %zu\n", val_lst->size);
 
   // training
+  double forward_dt = 0, backward_dt = 0, gd_dt = 0, input_load = 0,
+         debug_dt = 0, saving_dt = 0;
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for (int iter = 0; iter < iterations; iter++) {
-    double max_grad = 0, max_param = 0, max_loss = 0;
     for (int j = 0; j < num_of_batches; j++) {
+      struct timespec s, e;
       int off = j * batch_size;
 
+      clock_gettime(CLOCK_MONOTONIC, &s);
       for (int ipt = 0; ipt < batch_size && ipt + off < imgheader[1]; ipt++) {
         for (int px = 0; px < image_size; px++)
           input_matrix[ipt][px]->data =
@@ -142,12 +147,26 @@ void train(int iterations, double stepSize) {
         for (int dig = 0; dig < 10; dig++)
           ground_truth[ipt][dig]->data = truth[ipt + off] == dig ? 1.0 : 0.0;
       }
+      clock_gettime(CLOCK_MONOTONIC, &e);
+      input_load += (e.tv_sec - s.tv_sec) + (e.tv_nsec - s.tv_nsec) / 1e9;
 
+      clock_gettime(CLOCK_MONOTONIC, &s);
       forward(val_lst);
-      backward(val_lst);
-      gradientDescent(val_lst, stepSize);
+      clock_gettime(CLOCK_MONOTONIC, &e);
+      forward_dt += (e.tv_sec - s.tv_sec) + (e.tv_nsec - s.tv_nsec) / 1e9;
 
-      for (size_t i = 0; i < val_lst->size; i++) {
+      clock_gettime(CLOCK_MONOTONIC, &s);
+      backward(val_lst);
+      clock_gettime(CLOCK_MONOTONIC, &e);
+      backward_dt += (e.tv_sec - s.tv_sec) + (e.tv_nsec - s.tv_nsec) / 1e9;
+
+      clock_gettime(CLOCK_MONOTONIC, &s);
+      gradientDescent(val_lst, stepSize);
+      clock_gettime(CLOCK_MONOTONIC, &e);
+      gd_dt += (e.tv_sec - s.tv_sec) + (e.tv_nsec - s.tv_nsec) / 1e9;
+
+      clock_gettime(CLOCK_MONOTONIC, &s);
+      /*for (size_t i = 0; i < val_lst->size; i++) {
         if (val_lst->values[i]->_modifiable) {
           max_grad = max_grad > fabs(val_lst->values[i]->grad)
                          ? max_grad
@@ -156,11 +175,10 @@ void train(int iterations, double stepSize) {
                           ? max_param
                           : fabs(val_lst->values[i]->data);
         }
-      }
+      }*/
       currLoss = loss->data;
-      max_loss = max_loss > currLoss ? max_loss : currLoss;
 
-     // progress bar
+      // progress bar
       printf("\r[");
       int pos = ((j + 1) * BAR_WIDTH) / (num_of_batches);
 
@@ -177,14 +195,39 @@ void train(int iterations, double stepSize) {
              j + 1, num_of_batches, currLoss);
 
       fflush(stdout);
+      clock_gettime(CLOCK_MONOTONIC, &e);
+      debug_dt += (e.tv_sec - s.tv_sec) + (e.tv_nsec - s.tv_nsec) / 1e9;
     }
-    printf("\nIteration: %d\nMax Loss: %f\nMax |grad|: %f\nMax |param|: %f\n", iter,
-           max_loss, max_grad, max_param);
+    struct timespec s, e;
+    clock_gettime(CLOCK_MONOTONIC, &s);
     saveMLP(mlp, "model.agm");
-    printf("saved model!\n");
+    clock_gettime(CLOCK_MONOTONIC, &e);
+    saving_dt += (e.tv_sec - s.tv_sec) + (e.tv_nsec - s.tv_nsec) / 1e9;
+
+    printf(" saved model!\n");
   }
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  double tot_time =
+      (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+  double sum =
+      forward_dt + backward_dt + gd_dt + debug_dt + saving_dt + input_load;
   DestroyGraph(&val_lst);
   DestroyMLP(&mlp);
+  for (int i = 0; i < imgheader[1]; i++)
+    free(all_images[i]);
+  free(all_images);
+  all_images = NULL;
+  for (int i = 0; i < 80; i++)
+    printf("-");
+  printf("\nTIME ANALYSIS\n");
+  printf("Input loading:         %.2f%%\n", input_load * 100 / tot_time);
+  printf("Forward propagation:   %.2f%%\n", forward_dt * 100 / tot_time);
+  printf("Backward propagation:  %.2f%%\n", backward_dt * 100 / tot_time);
+  printf("Gradient descent:      %.2f%%\n", gd_dt * 100 / tot_time);
+  printf("I/O time:              %.2f%%\n", debug_dt * 100 / tot_time);
+  printf("Saving mlp parameters: %.2f%%\n", saving_dt * 100 / tot_time);
+  printf("Others:                %.2f%%\n", (tot_time - sum) * 100 / tot_time);
+  printf("Total time:            %.2fs\n", tot_time);
 }
 
 int main() {

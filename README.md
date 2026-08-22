@@ -1,5 +1,4 @@
 # AutoGrad
-
 A tiny **single-header automatic differentiation engine** written in C. (499 semi-colons)
 
 AutoGrad implements a reusable **static computation graph** supporting:
@@ -12,9 +11,7 @@ AutoGrad implements a reusable **static computation graph** supporting:
 Unlike dynamic autograd systems, the computation graph is **constructed once** and reused throughout training, avoiding repeated graph allocation and improving execution efficiency.
 
 ---
-
 ## Features
-
 * Single-header library (`autograd.h`)
 * Static computation graph
 * Forward and backward propagation
@@ -30,9 +27,7 @@ Unlike dynamic autograd systems, the computation graph is **constructed once** a
 * Minimal dependencies (standard C library)
 
 ---
-
 ## Supported Operations
-
 Current scalar operations include:
 
 * Addition (`+`)
@@ -44,9 +39,7 @@ Current scalar operations include:
 Additional mathematical operations can be added by defining the corresponding forward and backward functions.
 
 ---
-
-# Getting Started
-
+## Getting Started
 Include the header wherever the API is required:
 
 ```c
@@ -68,30 +61,7 @@ gcc test.c parser.c -lm -o test
 ```
 
 ---
-
-# Project Structure
-
-```text
-.
-├── autograd.h          # Single-header autograd library
-├── parser.c
-├── parser.h            # MNIST parser
-├── train.c             # Training program
-├── test.c              # Model evaluation
-├── model.agm           # Saved model
-├── FORMAT.txt          # Format description of agm files
-├── dataset/
-│   ├── train-images-idx3-ubyte
-│   ├── train-labels-idx1-ubyte
-│   ├── t10k-images-idx3-ubyte
-│   └── t10k-labels-idx1-ubyte
-└── README.md
-```
-
----
-
-# Core Idea
-
+## Core Idea
 Unlike the previous autograd implementation in [CMNIST](https://github.com/Beginner10617/CMNIST.git), this engine constructs the graph only once.
 
 AutoGrad instead separates:
@@ -109,9 +79,7 @@ The graph is allocated once and can then be reused for:
 No graph reconstruction is required between iterations.
 
 ---
-
-# Forward Pass
-
+## Forward Pass
 Each `Value` node stores:
 
 * Scalar value (`data`)
@@ -132,9 +100,7 @@ topoSortList(output, &topo);
 The same ordering can then be reused throughout training.
 
 ---
-
-# Backward Pass
-
+## Backward Pass
 Gradients are computed using reverse-mode automatic differentiation.
 
 ```c
@@ -151,9 +117,7 @@ for node in reverse(topological_order):
 Each operation propagates gradients to its parent nodes according to the chain rule.
 
 ---
-
-# Neural Network API
-
+## Neural Network API
 The library provides lightweight neural-network abstractions built directly on top of the autograd engine:
 
 * `Neuron`
@@ -168,9 +132,7 @@ These components support:
 * Parameter serialization
 
 ---
-
-# MNIST Example
-
+## MNIST Example
 The repository includes a complete handwritten digit classification example.
 
 Components include:
@@ -196,13 +158,11 @@ number of images: 10000
 -------------------------
 setting up tree
 loading dataset
-8997 correct out of 10000 cases 89.970% accuracy
+9583 correct out of 10000 cases 95.830% accuracy
 ```
 
 ---
-
-# Model Format
-
+## Model Format
 Trained models are stored in the binary `.agm` format.
 
 The serialized model contains:
@@ -215,9 +175,7 @@ The serialized model contains:
 This allows trained networks to be loaded without retraining.
 
 ---
-
-# Design
-
+## Design
 Each `Value` stores only the information necessary for automatic differentiation:
 
 * Current scalar value
@@ -235,30 +193,28 @@ setAdd(out, x, y);
 Because graph topology never changes, allocations occur only during graph construction.
 
 ---
+## Future Work
+Time analysis of the training loop with the static computation tree:
 
-# Future Work
+```text
+Input loading:         0.32%
+Forward propagation:   44.66%
+Backward propagation:  47.17%
+Gradient descent:      7.68%
+I/O time:              0.16%
+Saving mlp parameters: 0.00%
+Others:                0.00%
+Total time:            586.63s
+```
 
-Possible extensions include:
+The static computation tree eliminates the major de-allocation overhead, reducing training time from **2884.09s to 582.36s (~4.9× speedup)**.
 
-* Division
-* Exponential
-* Logarithm
-* Power
-* ReLU
-* Sigmoid
-* Softmax
-* Additional optimizers
-  * Momentum
-  * RMSProp
-  * Adam
-* Vector and tensor operations
-* SIMD optimizations
-* Batch training support
+The remaining bottlenecks are **forward and backward propagation**. Using **vector-valued nodes** and SIMD can exploit data-level parallelism and further improve performance.
+
+The goal is to optimize these bottlenecks and bring the training time per iteration down from **minutes to seconds**.
 
 ---
-
-# Inspiration
-
+## Inspiration
 While building a handwritten digit classifier in C in
 [CMNIST](https://github.com/Beginner10617/CMNIST.git),
 I noticed that rebuilding the computation graph every forward pass resulted in repeated memory allocation and deallocation.
