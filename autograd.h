@@ -184,16 +184,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 typedef struct Value Value;
 typedef void (*Funcptr)(Value *);
 struct Value {
-  double data, grad;
+  double *data, *grad;
   Funcptr _backward, _forward;
   struct Value **_prev;
-  size_t _prevsz, _prevcap;
+  size_t _prevsz, _prevcap, _dim;
   bool _modifiable, visited;
 };
 // Constructors
-Value *EmptyValue(bool modify);
-Value *floatToValue(float x, bool modify);
-Value *doubleToValue(double x, bool modify);
+Value *EmptyValue(bool modify, size_t dim);
+Value *floatToValue(float *x, size_t dim, bool modify);
+Value *doubleToValue(double *x, size_t dim, bool modify);
 // set out = x <op> y
 void setAdd(Value *out, Value *x, Value *y);
 void setSub(Value *out, Value *x, Value *y);
@@ -224,26 +224,17 @@ void DestroyValue(Value **x);
 // 1. Use set() to make the training computation tree
 // 2. Topologically sort using the final node
 // 3. Execute the training loop using the ValueList
-typedef struct Neuron Neuron;
 typedef struct Layer Layer;
 typedef struct MLP MLP;
 typedef enum { none, _tanh } actFunc;
-struct Neuron {
-  size_t size;
-  Value **weights;
-  Value *bias;
-  actFunc activation;
-};
-Neuron *createNeuron(size_t sz, actFunc act);
-Value *setNeuron(Neuron *neuron, Value **inputs);
-void printNeuron(Neuron *neuron);
-void DestroyNeuron(Neuron **neuron);
 
-struct Layer {
-  size_t num_of_neurons, size_of_neurons;
-  Neuron **neurons;
-  actFunc activation;
-};
+typedef struct {
+    size_t input_dim;
+    size_t output_dim;
+    Value *weights;  // Shape: input_dim * output_dim
+    Value *bias;     // Shape: output_dim
+    actFunc activation;
+} Layer;
 Layer *createLayer(size_t num_of_inputs, size_t num_of_outputs, actFunc act);
 Value **setLayer(Layer *layer, Value **inputs);
 void printLayer(Layer *layer);
